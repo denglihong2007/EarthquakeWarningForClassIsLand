@@ -1,0 +1,15 @@
+# 插件清单文件使用 YAML 格式存储。
+# YAML 教程：https://www.runoob.com/w3cnote/yaml-intro.html
+# 插件清单格式：https://docs.classisland.tech/zh-cn/latest/dev/plugins/create-project/#%E6%8F%92%E4%BB%B6%E6%B8%85%E5%8D%95%E6%96%87%E4%BB%B6
+
+id: denglihong.EarthquakeWarning
+name: 地震预警
+description: 地震预警功能（仅支持四川地区）
+entranceAssembly: "EarthquakeWarning.dll"
+url: https://github.com/denglihong2007/EarthquakeWarningForClassIsLand
+version: 0.1.0.0
+apiVersion: 1.5.0
+author: 电排骨
+repoOwner: denglihong2007
+repoName: EarthquakeWarningForClassIsLand
+assetsRoot: master/EarthquakeWarning
