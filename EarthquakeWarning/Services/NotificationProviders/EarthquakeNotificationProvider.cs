@@ -17,7 +17,7 @@ namespace EarthquakeWarning.Services.NotificationProviders;
 public class EarthquakeNotificationProvider : INotificationProvider, IHostedService
 {
     public string Name { get; set; } = "地震预警";
-    public string Description { get; set; } = "提供地震预警（仅限四川地区）";
+    public string Description { get; set; } = "提供地震预警";
     public Guid ProviderGuid { get; set; } = new Guid("B27C0AF3-C917-44DE-A61D-8010C3F3FB92");
 
     private EarthquakeNotificationSettings Settings { get; }
@@ -33,7 +33,7 @@ public class EarthquakeNotificationProvider : INotificationProvider, IHostedServ
         NotificationHostService = notificationHostService;
         NotificationHostService.RegisterNotificationProvider(this);
         Settings = NotificationHostService.GetNotificationProviderSettings<EarthquakeNotificationSettings>(ProviderGuid);
-        SettingsElement = new EarthquakeNotificationProviderSettingsControl(Settings);
+        SettingsElement = new EarthquakeNotificationProviderSettingsControl(Settings,this);
         LocalPosition = new LocalPosition { Latitude = Settings.Latitude, Longitude = Settings.Longitude };
         Task.Run(APIMonitor);
         EarthquakeReport.ReportUpdated += ReportUpdated;
@@ -49,6 +49,20 @@ public class EarthquakeNotificationProvider : INotificationProvider, IHostedServ
         };
     }
     private bool _showing = false;
+    private bool _testing = false;
+
+    public async Task Example() 
+    {
+        _testing = true;
+        DateTime StartTime = DateTime.Now;
+        EarthquakeReport.UpdateFromJson("{\"ID\":7815,\"EventID\":\"20241109200514.0001_1\",\"ReportTime\": \"" + StartTime.ToString("yyyy-MM-dd HH:mm:ss") + "\",\"ReportNum\": 1,\"OriginTime\": \"" + StartTime.ToString("yyyy-MM-dd HH:mm:ss") + "\",\"HypoCenter\": \"四川省阿坝藏族羌族自治州汶川县\",\"Latitude\": 31.0,\"Longitude\": 103.4,\"Magunitude\": 4.8,\"Depth\": null,\"MaxIntensity\": 4.0\r\n}");
+        await Task.Delay(10000);
+        EarthquakeReport.UpdateFromJson("{\"ID\":7816,\"EventID\":\"20241109200514.0001_2\",\"ReportTime\": \"" + StartTime.AddSeconds(10).ToString("yyyy-MM-dd HH:mm:ss") + "\",\"ReportNum\": 2,\"OriginTime\": \"" + StartTime.ToString("yyyy-MM-dd HH:mm:ss") + "\",\"HypoCenter\": \"四川省阿坝藏族羌族自治州汶川县\",\"Latitude\": 31.0,\"Longitude\": 103.4,\"Magunitude\": 6.8,\"Depth\": null,\"MaxIntensity\": 7.0\r\n}");
+        await Task.Delay(10000);
+        EarthquakeReport.UpdateFromJson("{\"ID\":7817,\"EventID\":\"20241109200514.0001_3\",\"ReportTime\": \"" + StartTime.AddSeconds(20).ToString("yyyy-MM-dd HH:mm:ss") + "\",\"ReportNum\": 3,\"OriginTime\": \"" + StartTime.ToString("yyyy-MM-dd HH:mm:ss") + "\",\"HypoCenter\": \"四川省阿坝藏族羌族自治州汶川县\",\"Latitude\": 31.0,\"Longitude\": 103.4,\"Magunitude\": 7.8,\"Depth\": null,\"MaxIntensity\": 9.0\r\n}");
+        await Task.Delay(10000);
+        EarthquakeReport.UpdateFromJson("{\"ID\":7818,\"EventID\":\"20241109200514.0001_4\",\"ReportTime\": \"" + StartTime.AddSeconds(30).ToString("yyyy-MM-dd HH:mm:ss") + "\",\"ReportNum\": 4,\"OriginTime\": \"" + StartTime.ToString("yyyy-MM-dd HH:mm:ss") + "\",\"HypoCenter\": \"四川省阿坝藏族羌族自治州汶川县\",\"Latitude\": 31.0,\"Longitude\": 103.4,\"Magunitude\": 8.0,\"Depth\": null,\"MaxIntensity\": 11.0\r\n}");
+    }
 
     private void ReportUpdated(EarthquakeReport obj)
     {
@@ -79,9 +93,13 @@ public class EarthquakeNotificationProvider : INotificationProvider, IHostedServ
             MaskContent = new EarthquakeNotificationProviderControl("EarthquakeNotifyMask", EarthquakeReport, LocalPosition),
             MaskDuration = TimeSpan.FromSeconds(3),
             OverlayContent = new EarthquakeNotificationProviderControl("EarthquakeNotifyOverlay", EarthquakeReport, LocalPosition),
-            OverlayDuration = DateTime.Parse(EarthquakeReport.OriginTime).AddSeconds(Math.Round(SWaveArrivalTimeCalculater.CalculateSWaveArrivalTime(EarthquakeReport, LocalPosition))) - DateTime.Now.AddSeconds(3)
+            OverlayDuration = DateTime.Parse(EarthquakeReport.OriginTime).AddSeconds(expectTime) - DateTime.Now.AddSeconds(3)
         };
         await NotificationHostService.ShowNotificationAsync(notice);
+        if (_testing) 
+        {
+            _testing = false;
+        }
     }
 
     public async void APIMonitor()
@@ -89,9 +107,19 @@ public class EarthquakeNotificationProvider : INotificationProvider, IHostedServ
         using var client = new HttpClient();
         while (true)
         {
-            await Task.Delay(1000);
-            string response = await client.GetStringAsync("https://api.wolfx.jp/sc_eew.json");
-            EarthquakeReport.UpdateFromJson(response);
+            try
+            {
+                if (!_testing)
+                {
+                    await Task.Delay(1000);
+                    string response = await client.GetStringAsync("https://api.wolfx.jp/sc_eew.json");
+                    EarthquakeReport.UpdateFromJson(response);
+                }
+            }
+            catch
+            {
+
+            }
         }
     }
 

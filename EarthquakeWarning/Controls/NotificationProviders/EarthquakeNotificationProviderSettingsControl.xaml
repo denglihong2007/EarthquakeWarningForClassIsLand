@@ -13,6 +13,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -24,6 +25,7 @@
             <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Latitude}" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
             <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Longitude}" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
             <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Threshold}" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+            <Button x:Name="btnExample" Grid.Row="3" Grid.Column="1" Content="预警演示" Margin="10" HorizontalAlignment="Right" VerticalAlignment="Center" Click="btnExample_Click"/>
         </Grid>
     </StackPanel>
 </UserControl>
