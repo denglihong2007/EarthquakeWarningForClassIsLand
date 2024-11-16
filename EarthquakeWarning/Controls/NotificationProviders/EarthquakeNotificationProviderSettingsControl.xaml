@@ -3,29 +3,34 @@
             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+            xmlns:controls1="clr-namespace:ClassIsland.Core.Controls;assembly=ClassIsland.Core"
             xmlns:local="clr-namespace:PluginWithNotificationProviders.Controls.NotificationProviders"
             mc:Ignorable="d"
             d:DesignHeight="300" d:DesignWidth="300">
-    <StackPanel DataContext="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=local:EarthquakeNotificationProviderSettingsControl}}">
-        <TextBlock TextWrapping="Wrap"  Text="您理解地震预警信息由“成都高新减灾研究所”提供，插件作者不对其拥有任何控制权。插件作者对其预警信息的准确性、有效性、及时性均不作承诺和保证，亦不保证地震预警服务能够满足您的所有需求。" Margin="10" VerticalAlignment="Center" HorizontalAlignment ="Center"/>
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="纬度" Margin="10" VerticalAlignment="Center" HorizontalAlignment ="Center"/>
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="经度" Margin="10" VerticalAlignment="Center" HorizontalAlignment ="Center"/>
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="烈度阈值" Margin="10" VerticalAlignment="Center" HorizontalAlignment ="Center"/>
-            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Latitude}" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Longitude}" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Threshold}" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
-            <Button x:Name="btnExample" Grid.Row="3" Grid.Column="1" Content="预警演示" Margin="10" HorizontalAlignment="Right" VerticalAlignment="Center" Click="btnExample_Click"/>
-        </Grid>
-    </StackPanel>
+    <ScrollViewer>
+        <StackPanel DataContext="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=local:EarthquakeNotificationProviderSettingsControl}}">
+            <TextBlock TextWrapping="Wrap"  Text="您理解地震预警信息由“成都高新减灾研究所”提供，插件作者不对其拥有任何控制权。插件作者对其预警信息的准确性、有效性、及时性均不作承诺和保证，亦不保证地震预警服务能够满足您的所有需求。" Margin="10" VerticalAlignment="Center" HorizontalAlignment ="Center"/>
+            <controls1:InfoCard Margin="0 0 0 6" IconKind="InfoOutline" Title="最新预警信息" Content="{Binding Settings.Info}"/>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="纬度" Margin="10" VerticalAlignment="Center" HorizontalAlignment ="Center"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="经度" Margin="10" VerticalAlignment="Center" HorizontalAlignment ="Center"/>
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="烈度阈值" Margin="10" VerticalAlignment="Center" HorizontalAlignment ="Center"/>
+                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Latitude}" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Longitude}" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Threshold}" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                <Button x:Name="btnExample" Grid.Row="3" Grid.Column="1" Content="预警演示" Margin="10" HorizontalAlignment="Right" VerticalAlignment="Center" Click="btnExample_Click"/>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

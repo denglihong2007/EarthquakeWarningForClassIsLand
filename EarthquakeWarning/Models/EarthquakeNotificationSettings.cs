@@ -7,6 +7,7 @@ public class EarthquakeNotificationSettings : ObservableRecipient
     private double _latitude = 28.741;
     private double _longitude = 104.850;
     private double _threshold = 2.0;
+    private string _info = "";
     public double Latitude
     {
         get => _latitude;
@@ -34,6 +35,16 @@ public class EarthquakeNotificationSettings : ObservableRecipient
         {
             if (value == _threshold) return;
             _threshold = value;
+            OnPropertyChanged();
+        }
+    }
+    public string Info
+    {
+        get => _info;
+        set
+        {
+            if (value == _info) return;
+            _info = value;
             OnPropertyChanged();
         }
     }

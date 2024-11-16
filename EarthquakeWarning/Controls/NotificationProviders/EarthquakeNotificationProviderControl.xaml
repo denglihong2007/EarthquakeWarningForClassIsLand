@@ -7,6 +7,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              d:DataContext="{d:DesignInstance local:EarthquakeNotificationProviderControl}"
              xmlns:converters1="clr-namespace:ClassIsland.Core.Converters;assembly=ClassIsland.Core"
+             xmlns:converters2="clr-namespace:EarthquakeWarning.Converters"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300">
     <UserControl.Resources>
@@ -18,6 +19,7 @@
             <TextBlock Text="地震预警" FontSize="{DynamicResource MainWindowLargeFontSize}" Margin="8 0" FontWeight="Bold"/>
         </StackPanel>
         <converters1:TimeSpanToTotalSecondsConverter x:Key="TimeSpanToTotalSecondsConverter" />
+        <converters2:IntensityToColorConverter x:Key="IntensityToColorConverter" />
 
         <!-- 地震预警 -->
         <Grid x:Key="EarthquakeNotifyOverlay">
@@ -39,7 +41,7 @@
             <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Orientation="Horizontal"
                         Margin="12 0">
                 <TextBlock VerticalAlignment="Center" Text="本地烈度"/>
-                <TextBlock Text="{Binding LocalIntensity}" FontWeight="Bold" FontSize="{DynamicResource MainWindowSecondaryFontSize}" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding LocalIntensity}" FontWeight="Bold" FontSize="{DynamicResource MainWindowSecondaryFontSize}" VerticalAlignment="Center" Foreground="{Binding LocalIntensity, Converter={StaticResource IntensityToColorConverter}}"/>
                 <TextBlock VerticalAlignment="Center" Text="    "/>
                 
                 <TextBlock VerticalAlignment="Center" Text="横波还有"/>

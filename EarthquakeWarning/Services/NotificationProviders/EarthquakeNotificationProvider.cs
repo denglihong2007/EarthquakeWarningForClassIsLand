@@ -63,9 +63,15 @@ public class EarthquakeNotificationProvider : INotificationProvider, IHostedServ
         await Task.Delay(10000);
         EarthquakeReport.UpdateFromJson("{\"ID\":7818,\"EventID\":\"20241109200514.0001_4\",\"ReportTime\": \"" + StartTime.AddSeconds(30).ToString("yyyy-MM-dd HH:mm:ss") + "\",\"ReportNum\": 4,\"OriginTime\": \"" + StartTime.ToString("yyyy-MM-dd HH:mm:ss") + "\",\"HypoCenter\": \"四川省阿坝藏族羌族自治州汶川县\",\"Latitude\": 31.0,\"Longitude\": 103.4,\"Magunitude\": 8.0,\"Depth\": null,\"MaxIntensity\": 11.0\r\n}");
     }
-
+    private bool _firstload = true;
     private void ReportUpdated(EarthquakeReport obj)
     {
+        Settings.Info = $"在{obj.ReportTime}时预警第{obj.ReportNum}报发出：在{obj.OriginTime}时，{obj.HypoCenter}({obj.Latitude} {obj.Longitude})发生{obj.Magunitude}级地震，最大烈度{obj.MaxIntensity}度。";
+        if (_firstload) 
+        {
+            _firstload = false;
+            return;
+        }
         if (LocalIntensityCalculator.CalculateLocalIntensity(EarthquakeReport, LocalPosition) > Settings.Threshold)
         {
             if (!_showing)
@@ -109,10 +115,10 @@ public class EarthquakeNotificationProvider : INotificationProvider, IHostedServ
         {
             try
             {
+                await Task.Delay(1000);
+                string response = await client.GetStringAsync("https://api.wolfx.jp/sc_eew.json");
                 if (!_testing)
                 {
-                    await Task.Delay(1000);
-                    string response = await client.GetStringAsync("https://api.wolfx.jp/sc_eew.json");
                     EarthquakeReport.UpdateFromJson(response);
                 }
             }
@@ -152,35 +158,18 @@ public class EarthquakeReport : ObservableRecipient
         var updatedReport = JsonSerializer.Deserialize<EarthquakeReport>(jsonResponse);
         if (updatedReport != null)
         {
-            if (EventID == "")
-            {
-                ID = updatedReport.ID;
-                EventID = updatedReport.EventID;
-                ReportTime = updatedReport.ReportTime;
-                ReportNum = updatedReport.ReportNum;
-                OriginTime = updatedReport.OriginTime;
-                HypoCenter = updatedReport.HypoCenter;
-                Latitude = updatedReport.Latitude;
-                Longitude = updatedReport.Longitude;
-                Magunitude = updatedReport.Magunitude;
-                Depth = updatedReport.Depth;
-                MaxIntensity = updatedReport.MaxIntensity;
-            }
-            else if (EventID != updatedReport.EventID)
-            {
-                ID = updatedReport.ID;
-                EventID = updatedReport.EventID;
-                ReportTime = updatedReport.ReportTime;
-                ReportNum = updatedReport.ReportNum;
-                OriginTime = updatedReport.OriginTime;
-                HypoCenter = updatedReport.HypoCenter;
-                Latitude = updatedReport.Latitude;
-                Longitude = updatedReport.Longitude;
-                Magunitude = updatedReport.Magunitude;
-                Depth = updatedReport.Depth;
-                MaxIntensity = updatedReport.MaxIntensity;
-                OnReportUpdated();
-            }
+            ID = updatedReport.ID;
+            EventID = updatedReport.EventID;
+            ReportTime = updatedReport.ReportTime;
+            ReportNum = updatedReport.ReportNum;
+            OriginTime = updatedReport.OriginTime;
+            HypoCenter = updatedReport.HypoCenter;
+            Latitude = updatedReport.Latitude;
+            Longitude = updatedReport.Longitude;
+            Magunitude = updatedReport.Magunitude;
+            Depth = updatedReport.Depth;
+            MaxIntensity = updatedReport.MaxIntensity;
+            OnReportUpdated();
         }
     }
 
