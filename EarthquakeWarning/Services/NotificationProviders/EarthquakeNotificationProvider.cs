@@ -7,10 +7,11 @@ using System.Net.Http;
 using MaterialDesignThemes.Wpf;
 using PluginWithNotificationProviders.Models;
 using PluginWithNotificationProviders.Controls.NotificationProviders;
-using System.Text.Json;
-using CommunityToolkit.Mvvm.ComponentModel;
 using EarthquakeWarning.Controls.NotificationProviders;
-using EarthquakeWarning.Calculators;
+using System.Text;
+using EarthquakeWarning.Models.EarthquakeModels;
+using System.Text.Json.Serialization;
+using System.Diagnostics;
 
 namespace EarthquakeWarning.Services.NotificationProviders;
 
@@ -24,9 +25,9 @@ public class EarthquakeNotificationProvider : INotificationProvider, IHostedServ
     public object? SettingsElement { get; set; }
     public object? IconElement { get; set; }
     private INotificationHostService NotificationHostService { get; }
-    public EarthquakeReport EarthquakeReport { get; } = new();
+    public EarthquakeInfoBase EarthquakeInfo = new();
     public LocalPosition LocalPosition { get; }
-
+    private HuaniaEarthQuakeCalculator huaniaEarthQuakeCalculator = new();
     public EarthquakeNotificationProvider(INotificationHostService notificationHostService)
     {
         IconElement = CreateIconElement();
@@ -36,7 +37,7 @@ public class EarthquakeNotificationProvider : INotificationProvider, IHostedServ
         SettingsElement = new EarthquakeNotificationProviderSettingsControl(Settings,this);
         LocalPosition = new LocalPosition { Latitude = Settings.Latitude, Longitude = Settings.Longitude };
         Task.Run(APIMonitor);
-        EarthquakeReport.ReportUpdated += ReportUpdated;
+        EarthquakeInfo.ReportUpdated += Update;
     }
 
     private static PackIcon CreateIconElement()
@@ -55,28 +56,39 @@ public class EarthquakeNotificationProvider : INotificationProvider, IHostedServ
     {
         _testing = true;
         DateTime StartTime = DateTime.Now;
-        EarthquakeReport.UpdateFromJson("{\"ID\":7815,\"EventID\":\"20241109200514.0001_1\",\"ReportTime\": \"" + StartTime.ToString("yyyy-MM-dd HH:mm:ss") + "\",\"ReportNum\": 1,\"OriginTime\": \"" + StartTime.ToString("yyyy-MM-dd HH:mm:ss") + "\",\"HypoCenter\": \"四川省阿坝藏族羌族自治州汶川县\",\"Latitude\": 31.0,\"Longitude\": 103.4,\"Magunitude\": 4.8,\"Depth\": null,\"MaxIntensity\": 4.0\r\n}");
-        await Task.Delay(10000);
-        EarthquakeReport.UpdateFromJson("{\"ID\":7816,\"EventID\":\"20241109200514.0001_2\",\"ReportTime\": \"" + StartTime.AddSeconds(10).ToString("yyyy-MM-dd HH:mm:ss") + "\",\"ReportNum\": 2,\"OriginTime\": \"" + StartTime.ToString("yyyy-MM-dd HH:mm:ss") + "\",\"HypoCenter\": \"四川省阿坝藏族羌族自治州汶川县\",\"Latitude\": 31.0,\"Longitude\": 103.4,\"Magunitude\": 6.8,\"Depth\": null,\"MaxIntensity\": 7.0\r\n}");
-        await Task.Delay(10000);
-        EarthquakeReport.UpdateFromJson("{\"ID\":7817,\"EventID\":\"20241109200514.0001_3\",\"ReportTime\": \"" + StartTime.AddSeconds(20).ToString("yyyy-MM-dd HH:mm:ss") + "\",\"ReportNum\": 3,\"OriginTime\": \"" + StartTime.ToString("yyyy-MM-dd HH:mm:ss") + "\",\"HypoCenter\": \"四川省阿坝藏族羌族自治州汶川县\",\"Latitude\": 31.0,\"Longitude\": 103.4,\"Magunitude\": 7.8,\"Depth\": null,\"MaxIntensity\": 9.0\r\n}");
-        await Task.Delay(10000);
-        EarthquakeReport.UpdateFromJson("{\"ID\":7818,\"EventID\":\"20241109200514.0001_4\",\"ReportTime\": \"" + StartTime.AddSeconds(30).ToString("yyyy-MM-dd HH:mm:ss") + "\",\"ReportNum\": 4,\"OriginTime\": \"" + StartTime.ToString("yyyy-MM-dd HH:mm:ss") + "\",\"HypoCenter\": \"四川省阿坝藏族羌族自治州汶川县\",\"Latitude\": 31.0,\"Longitude\": 103.4,\"Magunitude\": 8.0,\"Depth\": null,\"MaxIntensity\": 11.0\r\n}");
+        int eventId = 0; 
+        for (int i = 0;i<6;i++)
+        {
+            EarthquakeInfo.UpdateInfo(new EarthquakeInfoBase
+            {
+                Id = (eventId + i).ToString(),
+                StartAt = StartTime,
+                UpdateAt = DateTime.Now,
+                Latitude = 31.0,
+                Longitude = 103.4,
+                Magnitude = 4.0 + (i + 1.0) * 0.8,
+                Depth = 14.0,
+                PlaceName = "四川省阿坝藏族羌族自治州汶川县"
+            });
+            await Task.Delay(10000);
+
+        }
     }
     private bool _firstload = true;
-    private void ReportUpdated(EarthquakeReport obj)
+    private void Update(EarthquakeInfoBase obj)
     {
-        Settings.Info = $"在{obj.ReportTime}时预警第{obj.ReportNum}报发出：在{obj.OriginTime}时，{obj.HypoCenter}({obj.Latitude} {obj.Longitude})发生{obj.Magunitude}级地震，最大烈度{obj.MaxIntensity}度。";
+        Settings.Info = $"在{obj.StartAt:G}时，{obj.PlaceName}({obj.Latitude} {obj.Longitude})发生{obj.Magnitude}级地震，震源深度{obj.Depth}km。";
         if (_firstload) 
         {
             _firstload = false;
             return;
         }
-        if (LocalIntensityCalculator.CalculateLocalIntensity(EarthquakeReport, LocalPosition) > Settings.Threshold)
+        double distance = huaniaEarthQuakeCalculator.GetDistance(LocalPosition.Latitude, LocalPosition.Longitude, obj.Latitude, obj.Longitude);
+        if (huaniaEarthQuakeCalculator.GetIntensity(obj.Magnitude, distance) > Settings.Threshold)
         {
             if (!_showing)
             {
-                double expectTime = SWaveArrivalTimeCalculater.CalculateSWaveArrivalTime(EarthquakeReport, LocalPosition);
+                double expectTime = huaniaEarthQuakeCalculator.GetCountDownSeconds(obj.Depth, distance);
                 Application.Current.Dispatcher.BeginInvoke(() => ShowNotificationAsync(expectTime));
                 _showing = true; // 在定时器启动之前设置为 true
 
@@ -96,10 +108,10 @@ public class EarthquakeNotificationProvider : INotificationProvider, IHostedServ
     {
         var notice = new NotificationRequest
         {
-            MaskContent = new EarthquakeNotificationProviderControl("EarthquakeNotifyMask", EarthquakeReport, LocalPosition),
+            MaskContent = new EarthquakeNotificationProviderControl("EarthquakeNotifyMask", EarthquakeInfo, LocalPosition),
             MaskDuration = TimeSpan.FromSeconds(3),
-            OverlayContent = new EarthquakeNotificationProviderControl("EarthquakeNotifyOverlay", EarthquakeReport, LocalPosition),
-            OverlayDuration = DateTime.Parse(EarthquakeReport.OriginTime).AddSeconds(expectTime) - DateTime.Now.AddSeconds(3)
+            OverlayContent = new EarthquakeNotificationProviderControl("EarthquakeNotifyOverlay", EarthquakeInfo, LocalPosition),
+            OverlayDuration = EarthquakeInfo.StartAt.AddSeconds(expectTime) - DateTime.Now.AddSeconds(3)
         };
         await NotificationHostService.ShowNotificationAsync(notice);
         if (_testing) 
@@ -116,67 +128,91 @@ public class EarthquakeNotificationProvider : INotificationProvider, IHostedServ
             try
             {
                 await Task.Delay(1000);
-                string response = await client.GetStringAsync("https://api.wolfx.jp/sc_eew.json");
                 if (!_testing)
                 {
-                    EarthquakeReport.UpdateFromJson(response);
+                    EarthquakeInfo.UpdateInfo(GetEarthQuakeList().Result[0]);
                 }
             }
-            catch
+            catch (Exception e)
             {
-
+                Debug.Write(e.Message);
             }
         }
+    }
+    private string HuaniaApi = Encoding.UTF8.GetString(Convert.FromBase64String("aHR0cHM6Ly9tb2JpbGUtbmV3LmNoaW5hZWV3LmNuL3YxLw=="));
+    private readonly IHttpRequester _httpRequester = new HttpRequester();
+    private readonly IJsonConvertService _jsonConvert = new JsonConvertService();
+    public async Task<List<EarthquakeInfoBase>> GetEarthQuakeList()
+    {
+        var response = _jsonConvert.ConvertTo<HuaniaWarningsResponse>(
+            await _httpRequester.GetString(HuaniaApi + "earlywarnings?updates=3&start_at=0", null).ConfigureAwait(false));
+        if (response?.Code != 0)
+            throw new Exception(response?.Message);
+        return response.Data.Select(t => t.MapToEarthQuakeInfo()).ToList();
     }
 
     public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
 }
-
-public class EarthquakeReport : ObservableRecipient
+public class HuaniaEarthQuakeDto
 {
-    // 你的属性定义
-    public int ID { get; set; }
-    public string EventID { get; set; } = "";
-    public string ReportTime { get; set; }
-    public int ReportNum { get; set; }
-    public string OriginTime { get; set; }
-    public string HypoCenter { get; set; }
-    public double Latitude { get; set; }
-    public double Longitude { get; set; }
-    public double Magunitude { get; set; }
-    public double? Depth { get; set; }  // 使用 nullable 类型以处理可能为 null 的值
-    public double MaxIntensity { get; set; }
+    [JsonPropertyName("eventId")] public long EventId { get; set; }
 
-    // 定义事件
-    public event Action<EarthquakeReport> ReportUpdated;
+    [JsonPropertyName("updates")] public long Updates { get; set; }
 
-    // 更新整个报告的方法
-    public void UpdateFromJson(string jsonResponse)
+    [JsonPropertyName("latitude")] public double Latitude { get; set; }
+
+    [JsonPropertyName("longitude")] public double Longitude { get; set; }
+
+    [JsonPropertyName("depth")] public double Depth { get; set; }
+
+    [JsonPropertyName("epicenter")] public string Epicenter { get; set; }
+
+    [JsonPropertyName("startAt")] public DateTime StartAt { get; set; }
+
+    [JsonPropertyName("updateAt")] public DateTime UpdateAt { get; set; }
+
+    [JsonPropertyName("magnitude")] public double Magnitude { get; set; }
+
+    [JsonPropertyName("insideNet")] public long InsideNet { get; set; }
+
+    [JsonPropertyName("sations")] public long Sations { get; set; }
+}
+
+public class HuaniaEarthQuakeInfoResponse
+{
+    [JsonPropertyName("code")] public long Code { get; set; }
+
+    [JsonPropertyName("message")] public string Message { get; set; }
+
+    [JsonPropertyName("data")] public List<HuaniaEarthQuakeDto> Data { get; set; }
+}
+
+public class HuaniaWarningsResponse
+{
+    [JsonPropertyName("code")] public long Code { get; set; }
+
+    [JsonPropertyName("message")] public string Message { get; set; }
+
+    [JsonPropertyName("data")] public List<HuaniaEarthQuakeDto> Data { get; set; }
+}
+
+public static class HuaniaEarthQuakeToEarthQuakeInfoMapper
+{
+    public static EarthquakeInfoBase MapToEarthQuakeInfo(this HuaniaEarthQuakeDto earthQuake)
     {
-        var updatedReport = JsonSerializer.Deserialize<EarthquakeReport>(jsonResponse);
-        if (updatedReport != null)
+        return new EarthquakeInfoBase
         {
-            ID = updatedReport.ID;
-            EventID = updatedReport.EventID;
-            ReportTime = updatedReport.ReportTime;
-            ReportNum = updatedReport.ReportNum;
-            OriginTime = updatedReport.OriginTime;
-            HypoCenter = updatedReport.HypoCenter;
-            Latitude = updatedReport.Latitude;
-            Longitude = updatedReport.Longitude;
-            Magunitude = updatedReport.Magunitude;
-            Depth = updatedReport.Depth;
-            MaxIntensity = updatedReport.MaxIntensity;
-            OnReportUpdated();
-        }
-    }
-
-    // 触发事件的方法
-    protected virtual void OnReportUpdated()
-    {
-        ReportUpdated?.Invoke(this);
+            Id = earthQuake.EventId.ToString(),
+            StartAt = earthQuake.StartAt,
+            UpdateAt = earthQuake.UpdateAt,
+            Latitude = earthQuake.Latitude,
+            Longitude = earthQuake.Longitude,
+            Magnitude = earthQuake.Magnitude,
+            Depth = earthQuake.Depth,
+            PlaceName = earthQuake.Epicenter
+        };
     }
 }
 public class LocalPosition
