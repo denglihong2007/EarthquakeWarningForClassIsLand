@@ -18,7 +18,7 @@ namespace EarthquakeWarning.Services.NotificationProviders;
 public class EarthquakeNotificationProvider : INotificationProvider, IHostedService
 {
     public string Name { get; set; } = "地震预警";
-    public string Description { get; set; } = "提供地震预警";
+    public string Description { get; set; } = "在地震发生时，根据用户设置发出地震预警。";
     public Guid ProviderGuid { get; set; } = new Guid("B27C0AF3-C917-44DE-A61D-8010C3F3FB92");
 
     private EarthquakeNotificationSettings Settings { get; }
@@ -77,7 +77,7 @@ public class EarthquakeNotificationProvider : INotificationProvider, IHostedServ
     private bool _firstload = true;
     private void Update(EarthquakeInfoBase obj)
     {
-        Settings.Info = $"在{obj.StartAt:G}时，{obj.PlaceName}({obj.Latitude} {obj.Longitude})发生{obj.Magnitude}级地震，震源深度{obj.Depth}km。";
+        Settings.Info = $"在{obj.StartAt:G}时，{obj.PlaceName}({obj.Latitude} {obj.Longitude})发生{obj.Magnitude}级地震，震源深度{obj.Depth}km。本地距离{huaniaEarthQuakeCalculator.GetDistance(LocalPosition.Latitude, LocalPosition.Longitude, obj.Latitude, obj.Longitude):F0}km，本地烈度{huaniaEarthQuakeCalculator.GetIntensity(obj.Magnitude, huaniaEarthQuakeCalculator.GetDistance(LocalPosition.Latitude, LocalPosition.Longitude, obj.Latitude, obj.Longitude)):F1}。";
         if (_firstload) 
         {
             _firstload = false;

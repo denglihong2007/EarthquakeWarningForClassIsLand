@@ -7,7 +7,7 @@ name: 地震预警
 description: 防范于未然，争取宝贵的避险时间
 entranceAssembly: "EarthquakeWarning.dll"
 url: https://github.com/denglihong2007/EarthquakeWarningForClassIsLand
-version: 0.3.0.0
+version: 0.3.1.0
 apiVersion: 1.5.0
 author: 电排骨
 repoOwner: denglihong2007
