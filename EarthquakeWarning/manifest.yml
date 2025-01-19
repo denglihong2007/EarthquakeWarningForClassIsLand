@@ -4,7 +4,7 @@
 
 id: denglihong.EarthquakeWarning
 name: 地震预警
-description: 防范于未然，争取宝贵的避险时间
+description: 地震能预警，预警能救命
 entranceAssembly: "EarthquakeWarning.dll"
 url: https://github.com/denglihong2007/EarthquakeWarningForClassIsLand
 version: 0.3.1.0
