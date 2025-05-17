@@ -1,6 +1,6 @@
-﻿using EarthquakeWarning.Models.EarthquakeModels;
+﻿using EarthquakeWarning.Models;
+using EarthquakeWarning.Models.EarthquakeModels;
 using EarthquakeWarning.Services;
-using EarthquakeWarning.Services.NotificationProviders;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -9,14 +9,14 @@ namespace EarthquakeWarning.Controls.NotificationProviders;
 public partial class EarthquakeNotificationProviderControl : UserControl, INotifyPropertyChanged
 {
     private object? _element;
-    public EarthquakeInfoBase EarthquakeInfo { get; }
+    public EarthquakeInfo EarthquakeInfo { get; }
     private HuaniaEarthQuakeCalculator EarthquakeCalculator = new();
     public string LocalIntensity 
     {
         get
         {
             double distance = EarthquakeCalculator.GetDistance(LocalPosition.Latitude, LocalPosition.Longitude, EarthquakeInfo.Latitude, EarthquakeInfo.Longitude);
-            return EarthquakeCalculator.GetIntensity(EarthquakeInfo.Magnitude, distance).ToString("F1");
+            return EarthquakeCalculator.GetIntensity(EarthquakeInfo.Magunitude, distance).ToString("F1");
         }
     }
     public string SWaveArrivalTime 
@@ -24,14 +24,14 @@ public partial class EarthquakeNotificationProviderControl : UserControl, INotif
         get
         {
             double distance = EarthquakeCalculator.GetDistance(LocalPosition.Latitude, LocalPosition.Longitude, EarthquakeInfo.Latitude, EarthquakeInfo.Longitude);
-            return ((int)EarthquakeCalculator.GetCountDownSeconds(EarthquakeInfo.Depth,distance)).ToString();
+            return ((int)EarthquakeCalculator.GetCountDownSeconds(EarthquakeInfo.Depth??17.4, distance)).ToString();
         }
     }
     public TimeSpan time 
     {
         get 
         {
-            TimeSpan timeDifference = EarthquakeInfo.StartAt.AddSeconds(int.Parse(SWaveArrivalTime)) - DateTime.Now;
+            TimeSpan timeDifference = EarthquakeInfo.OriginTime.AddSeconds(int.Parse(SWaveArrivalTime)) - DateTime.Now;
             return timeDifference;
         }
         set { }
@@ -52,7 +52,7 @@ public partial class EarthquakeNotificationProviderControl : UserControl, INotif
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
     public LocalPosition LocalPosition;
-    public EarthquakeNotificationProviderControl(string key, EarthquakeInfoBase earthquakeInfo, LocalPosition localPosition)
+    public EarthquakeNotificationProviderControl(string key, EarthquakeInfo earthquakeInfo, LocalPosition localPosition)
     {
         LocalPosition = localPosition;
         EarthquakeInfo = earthquakeInfo;

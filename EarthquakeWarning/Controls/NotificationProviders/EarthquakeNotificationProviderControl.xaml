@@ -26,17 +26,22 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
                 <ColumnDefinition/>
+                <ColumnDefinition/>
             </Grid.ColumnDefinitions>
-
             <TextBlock Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center"
-                       Margin="12 0">
-                <Run Text="{Binding EarthquakeInfo.PlaceName, Mode=OneWay}"/>
+                       Margin="0,0,12,0">
+                <Run Text="预警第"/>
+                <Run Text="{Binding EarthquakeInfo.ReportNum, Mode=OneWay}"/>
+                <Run Text="报"/>
+            </TextBlock>
+            <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"
+                       Margin="0,0,12,0">
+                <Run Text="{Binding EarthquakeInfo.HypoCenter, Mode=OneWay}"/>
                 <Run Text="发生"/>
-                <Run Text="{Binding EarthquakeInfo.Magnitude, Mode=OneWay}"/>
+                <Run Text="{Binding EarthquakeInfo.Magunitude, Mode=OneWay}"/>
                 <Run Text="级地震"/>
             </TextBlock>
-            <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Orientation="Horizontal"
-                        Margin="12 0">
+            <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center" Orientation="Horizontal">
                 <TextBlock VerticalAlignment="Center" Text="本地烈度"/>
                 <TextBlock Text="{Binding LocalIntensity}" FontWeight="Bold" FontSize="{DynamicResource MainWindowSecondaryFontSize}" VerticalAlignment="Center" Foreground="{Binding LocalIntensity, Converter={StaticResource IntensityToColorConverter}}"/>
                 <TextBlock VerticalAlignment="Center" Text="    "/>
