@@ -1,26 +1,21 @@
-﻿using System.Windows.Controls;
-using EarthquakeWarning.Services.NotificationProviders;
-using Octokit;
-using PluginWithNotificationProviders.Models;
+﻿using EarthquakeWarning.Services;
 
-namespace PluginWithNotificationProviders.Controls.NotificationProviders;
+namespace EarthquakeWarning.Controls.NotificationProviders;
 
-public partial class EarthquakeNotificationProviderSettingsControl : UserControl
+public partial class EarthquakeNotificationProviderSettingsControl
 {
-    public EarthquakeNotificationSettings Settings { get; }
-    private EarthquakeNotificationProvider EarthquakeNotificationProvider { get; }
-
-    public EarthquakeNotificationProviderSettingsControl(EarthquakeNotificationSettings settings, EarthquakeNotificationProvider earthquakeNotificationProvider)
+    private readonly SharedService _sharedService;
+    public EarthquakeNotificationProviderSettingsControl(SharedService sharedService)
     {
-        Settings = settings;
-        EarthquakeNotificationProvider = earthquakeNotificationProvider;
+        _sharedService = sharedService;
         InitializeComponent();
     }
 
     private async void btnExample_Click(object sender, System.Windows.RoutedEventArgs e)
     {
         btnExample.IsEnabled = false;
-        await Task.Run(EarthquakeNotificationProvider.Example);
+        await _sharedService.Example();
         btnExample.IsEnabled = true;
+
     }
 }

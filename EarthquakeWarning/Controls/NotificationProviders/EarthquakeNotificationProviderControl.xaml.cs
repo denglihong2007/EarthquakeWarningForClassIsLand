@@ -1,6 +1,5 @@
-﻿using EarthquakeWarning.Models;
-using EarthquakeWarning.Models.EarthquakeModels;
-using EarthquakeWarning.Services;
+﻿using EarthquakeWarning.Calculators;
+using EarthquakeWarning.Models;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -8,35 +7,36 @@ using System.Windows.Controls;
 namespace EarthquakeWarning.Controls.NotificationProviders;
 public partial class EarthquakeNotificationProviderControl : UserControl, INotifyPropertyChanged
 {
-    private object? _element;
-    public EarthquakeInfo EarthquakeInfo { get; }
-    private HuaniaEarthQuakeCalculator EarthquakeCalculator = new();
+    public EarthquakeInfo EarthquakeInfo { get; set; }
+
     public string LocalIntensity 
     {
         get
         {
-            double distance = EarthquakeCalculator.GetDistance(LocalPosition.Latitude, LocalPosition.Longitude, EarthquakeInfo.Latitude, EarthquakeInfo.Longitude);
-            return EarthquakeCalculator.GetIntensity(EarthquakeInfo.Magunitude, distance).ToString("F1");
+            double distance = HuaniaEarthQuakeCalculator.GetDistance(_localPosition.Latitude, _localPosition.Longitude, EarthquakeInfo.Data.Latitude, EarthquakeInfo.Data.Longitude);
+            return HuaniaEarthQuakeCalculator.GetIntensity(double.Parse(EarthquakeInfo.Data.Magnitude), distance).ToString("F1");
         }
     }
+
     public string SWaveArrivalTime 
     {
         get
         {
-            double distance = EarthquakeCalculator.GetDistance(LocalPosition.Latitude, LocalPosition.Longitude, EarthquakeInfo.Latitude, EarthquakeInfo.Longitude);
-            return ((int)EarthquakeCalculator.GetCountDownSeconds(EarthquakeInfo.Depth??17.4, distance)).ToString();
+            double distance = HuaniaEarthQuakeCalculator.GetDistance(_localPosition.Latitude, _localPosition.Longitude, EarthquakeInfo.Data.Latitude, EarthquakeInfo.Data.Longitude);
+            return ((int)HuaniaEarthQuakeCalculator.GetCountDownSeconds(EarthquakeInfo.Data.Depth, distance)).ToString();
         }
     }
-    public TimeSpan time 
+
+    public TimeSpan Time 
     {
         get 
         {
-            TimeSpan timeDifference = EarthquakeInfo.OriginTime.AddSeconds(int.Parse(SWaveArrivalTime)) - DateTime.Now;
+            TimeSpan timeDifference = DateTime.Parse(EarthquakeInfo.Data.ShockTime).AddSeconds(int.Parse(SWaveArrivalTime)) - DateTime.Now;
             return timeDifference;
         }
         set { }
     }
-    public event PropertyChangedEventHandler? PropertyChanged;
+
     public object? Element
     {
         get => _element;
@@ -47,26 +47,33 @@ public partial class EarthquakeNotificationProviderControl : UserControl, INotif
             OnPropertyChanged();
         }
     }
-    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+
+    private object? _element;
+
+    private readonly LocalPosition _localPosition;
+
+    public EarthquakeNotificationProviderControl(EarthquakeInfo earthquakeInfo, LocalPosition localPosition)
     {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-    public LocalPosition LocalPosition;
-    public EarthquakeNotificationProviderControl(string key, EarthquakeInfo earthquakeInfo, LocalPosition localPosition)
-    {
-        LocalPosition = localPosition;
+        this._localPosition = localPosition;
         EarthquakeInfo = earthquakeInfo;
         InitializeComponent();
-        var visual = FindResource(key) as FrameworkElement;
+        var visual = FindResource("EarthquakeNotifyOverlay") as FrameworkElement;
         Element = visual;
         var timer = new System.Timers.Timer(1000);
         timer.Elapsed += (s, e) =>
         {
-            OnPropertyChanged(nameof(time));
             OnPropertyChanged(nameof(EarthquakeInfo));
+            OnPropertyChanged(nameof(Time));
             OnPropertyChanged(nameof(LocalIntensity));
             OnPropertyChanged(nameof(SWaveArrivalTime));
         };
         timer.Start();
     }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
 }

@@ -1,51 +1,15 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace PluginWithNotificationProviders.Models;
+namespace EarthquakeWarning.Models;
 
-public class EarthquakeNotificationSettings : ObservableRecipient
+public partial class EarthquakeNotificationSettings : ObservableRecipient
 {
+    [ObservableProperty]
     private double _latitude = 28.741;
+    [ObservableProperty]
     private double _longitude = 104.850;
+    [ObservableProperty]
     private double _threshold = 2.0;
+    [ObservableProperty]
     private string _info = "";
-    public double Latitude
-    {
-        get => _latitude;
-        set
-        {
-            if (value == _latitude) return;
-            _latitude = value;
-            OnPropertyChanged();
-        }
-    }
-    public double Longitude
-    {
-        get => _longitude;
-        set
-        {
-            if (value == _longitude) return;
-            _longitude = value;
-            OnPropertyChanged();
-        }
-    }
-    public double Threshold
-    {
-        get => _threshold;
-        set
-        {
-            if (value == _threshold) return;
-            _threshold = value;
-            OnPropertyChanged();
-        }
-    }
-    public string Info
-    {
-        get => _info;
-        set
-        {
-            if (value == _info) return;
-            _info = value;
-            OnPropertyChanged();
-        }
-    }
 }

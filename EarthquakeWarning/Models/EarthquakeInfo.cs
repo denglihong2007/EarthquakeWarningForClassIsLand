@@ -1,45 +1,35 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System;
+﻿using EarthquakeWarning.Converters;
+using System.Text.Json.Serialization;
 
-namespace EarthquakeWarning.Models.EarthquakeModels;
+namespace EarthquakeWarning.Models;
 
-public partial class EarthquakeInfo : ObservableRecipient
+public class Data
 {
-    public int ID { get; set; }
-    public string EventID { get; set; }
-    public DateTime ReportTime { get; set; }
-    public int ReportNum { get; set; }
-    public DateTime OriginTime { get; set; }
-    public string? HypoCenter { get; set; }
+    public int EventId { get; set; }
+    public int Updates { get; set; }
     public double Latitude { get; set; }
     public double Longitude { get; set; }
-    public double Magunitude { get; set; }
-    public double? Depth { get; set; }
-    public double MaxIntensity { get; set; }
-    public string? Pond { get; set; }
-    public event Action<EarthquakeInfo> ReportUpdated;
-    protected virtual void OnReportUpdated()
+    public int Depth { get; set; }
+    public string PlaceName { get; set; }
+    public string ShockTime { get; set; }
+    public string UpdateTime { get; set; }
+    public string Magnitude { get; set; }
+    public int InsideNet { get; set; }
+    public int Sations { get; set; }
+    public string SourceType { get; set; }
+    public int EpiIntensity { get; set; }
+}
+
+public class EarthquakeInfo
+{
+    public string Type { get; set; }
+    [JsonPropertyName("Data")]
+    public Data Data { get; set; }
+    public string Md5 { get; set; }
+    public void UpdateFrom(EarthquakeInfo info)
     {
-        ReportUpdated?.Invoke(this);
-    }
-    public void UpdateInfo(EarthquakeInfo earthquakeInfoBase)
-    {
-        if(EventID == earthquakeInfoBase.EventID)
-        {
-            return;
-        }
-        ID = earthquakeInfoBase.ID;
-        EventID = earthquakeInfoBase.EventID;
-        ReportTime = earthquakeInfoBase.ReportTime;
-        ReportNum = earthquakeInfoBase.ReportNum;
-        OriginTime = earthquakeInfoBase.OriginTime;
-        HypoCenter = earthquakeInfoBase.HypoCenter;
-        Latitude = earthquakeInfoBase.Latitude;
-        Longitude = earthquakeInfoBase.Longitude;
-        Magunitude = earthquakeInfoBase.Magunitude;
-        Depth = earthquakeInfoBase.Depth;
-        MaxIntensity = earthquakeInfoBase.MaxIntensity;
-        Pond = earthquakeInfoBase.Pond;
-        OnReportUpdated();
+        Type = info.Type;
+        Data = info.Data;
+        Md5 = info.Md5;
     }
 }

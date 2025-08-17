@@ -1,160 +1,139 @@
-﻿using ClassIsland.Core.Abstractions.Services;
-using ClassIsland.Shared.Interfaces;
-using ClassIsland.Shared.Models.Notification;
-using Microsoft.Extensions.Hosting;
-using System.Windows;
-using System.Net.Http;
-using MaterialDesignThemes.Wpf;
-using PluginWithNotificationProviders.Models;
-using PluginWithNotificationProviders.Controls.NotificationProviders;
+﻿using ClassIsland.Core.Abstractions.Services.NotificationProviders;
+using ClassIsland.Core.Attributes;
+using ClassIsland.Core.Models.Notification;
+using EarthquakeWarning.Calculators;
 using EarthquakeWarning.Controls.NotificationProviders;
-using EarthquakeWarning.Models.EarthquakeModels;
-using System.Diagnostics;
-using System.Text.Json;
 using EarthquakeWarning.Models;
+using MaterialDesignThemes.Wpf;
+using System.Diagnostics;
+using System.Net.WebSockets;
+using System.Text;
+using System.Text.Json;
+using System.Windows;
 
 namespace EarthquakeWarning.Services.NotificationProviders;
 
-public class EarthquakeNotificationProvider : INotificationProvider, IHostedService
+[NotificationProviderInfo("B27C0AF3-C917-44DE-A61D-8010C3F3FB92", "地震预警", PackIconKind.ShieldHome, "在地震发生时，根据用户设置发出地震预警")]
+public class EarthquakeNotificationProvider : NotificationProviderBase<EarthquakeNotificationSettings>
 {
-    public string Name { get; set; } = "地震预警";
-    public string Description { get; set; } = "在地震发生时，根据用户设置发出地震预警。";
-    public Guid ProviderGuid { get; set; } = new Guid("B27C0AF3-C917-44DE-A61D-8010C3F3FB92");
+    private readonly JsonSerializerOptions options = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
 
-    private EarthquakeNotificationSettings Settings { get; }
-    public object? SettingsElement { get; set; }
-    public object? IconElement { get; set; }
-    private INotificationHostService NotificationHostService { get; }
     public LocalPosition LocalPosition { get; }
-    public EarthquakeInfo EarthquakeInfo { get; } = new();
-    private HuaniaEarthQuakeCalculator huaniaEarthQuakeCalculator = new();
-    public EarthquakeNotificationProvider(INotificationHostService notificationHostService)
-    {
-        IconElement = CreateIconElement();
-        NotificationHostService = notificationHostService;
-        NotificationHostService.RegisterNotificationProvider(this);
-        Settings = NotificationHostService.GetNotificationProviderSettings<EarthquakeNotificationSettings>(ProviderGuid);
-        SettingsElement = new EarthquakeNotificationProviderSettingsControl(Settings, this);
-        LocalPosition = new LocalPosition { Latitude = Settings.Latitude, Longitude = Settings.Longitude };
-        Task.Run(APIMonitor);
-        EarthquakeInfo.ReportUpdated += Update;
-    }
 
-    private static PackIcon CreateIconElement()
+    public EarthquakeInfo EarthquakeInfo { get; set; } = new();
+
+    private readonly SharedService _sharedService;
+
+    private EarthquakeInfo _bufferedEarthquakeInfo;
+
+    public EarthquakeNotificationProvider(SharedService sharedService)
     {
-        return new PackIcon
+        _sharedService = sharedService;
+        _sharedService.TestInfoUpdated += (sender, info) =>
         {
-            Kind = PackIconKind.ShieldHome,
-            Width = 24,
-            Height = 24
+            _bufferedEarthquakeInfo ??= EarthquakeInfo;
+            EarthquakeInfo.UpdateFrom(info);
+            Update();
         };
+        LocalPosition = new LocalPosition { Latitude = Settings.Latitude, Longitude = Settings.Longitude };
+        Task.Run(WSMonitor);
     }
+
     private bool _showing = false;
-    private bool _testing = false;
 
-    public async Task Example()
+    private async void Update()
     {
-        _testing = true;
-        DateTime StartTime = DateTime.Now;
-        int eventId = 0;
-        for (int i = 0; i < 6; i++)
+        var obj = EarthquakeInfo.Data;
+        double distance = HuaniaEarthQuakeCalculator.GetDistance(LocalPosition.Latitude, LocalPosition.Longitude, obj.Latitude, obj.Longitude);
+        double threshold = HuaniaEarthQuakeCalculator.GetIntensity(double.Parse(obj.Magnitude), distance);
+        Settings.Info = $"在{obj.ShockTime}时，{obj.PlaceName}({obj.Latitude} {obj.Longitude})发生{obj.Magnitude}级地震，震源深度{obj.Depth}km。本地距离{distance:F0}km，本地烈度{threshold:F1}。";
+        if (threshold > Settings.Threshold && !_showing)
         {
-            EarthquakeInfo.UpdateInfo(new EarthquakeInfo
+            double expectTime = HuaniaEarthQuakeCalculator.GetCountDownSeconds(obj.Depth, distance);
+            DateTime pWaveArriveTime = DateTime.Parse(obj.ShockTime).AddSeconds(expectTime);
+            if (DateTime.Now >= pWaveArriveTime)
             {
-                ID = 0,
-                EventID = (eventId + i).ToString(),
-                ReportTime = DateTime.Now,
-                ReportNum = i,
-                OriginTime = StartTime,
-                HypoCenter = "四川省阿坝藏族羌族自治州汶川县",
-                Latitude = 31.0,
-                Longitude = 103.4,
-                Depth = 14.0,
-                MaxIntensity = 12,
-                Magunitude = 4.0 + (i + 1.0) * 0.8,
-                Pond = "43",
-            });
-            await Task.Delay(10000);
-        }
-        _testing = false;
-    }
-    private bool _firstload = true;
-    private void Update(EarthquakeInfo obj)
-    {
-        Settings.Info = $"在{obj.OriginTime:G}时，{obj.HypoCenter}({obj.Latitude} {obj.Longitude})发生{obj.Magunitude}级地震，震源深度{obj.Depth}km。本地距离{huaniaEarthQuakeCalculator.GetDistance(LocalPosition.Latitude, LocalPosition.Longitude, obj.Latitude, obj.Longitude):F0}km，本地烈度{huaniaEarthQuakeCalculator.GetIntensity(obj.Magunitude, huaniaEarthQuakeCalculator.GetDistance(LocalPosition.Latitude, LocalPosition.Longitude, obj.Latitude, obj.Longitude)):F1}。";
-        if (_firstload)
-        {
-            _firstload = false;
-            return;
-        }
-        double distance = huaniaEarthQuakeCalculator.GetDistance(LocalPosition.Latitude, LocalPosition.Longitude, obj.Latitude, obj.Longitude);
-        if (huaniaEarthQuakeCalculator.GetIntensity(obj.Magunitude, distance) > Settings.Threshold)
-        {
-            if (!_showing)
-            {
-                double expectTime = huaniaEarthQuakeCalculator.GetCountDownSeconds(obj.Depth??17.4,distance);
-                DateTime pWaveArriveTime = obj.OriginTime.AddSeconds(expectTime);
-                if (DateTime.Now > pWaveArriveTime)
-                {
-                    return;
-                }
-                Application.Current.Dispatcher.BeginInvoke(() => ShowNotificationAsync(expectTime));
-                _showing = true; // 在定时器启动之前设置为 true
-
-                var timer = new System.Timers.Timer(expectTime * 1000);
-                timer.Elapsed += (s, e) =>
-                {
-                    _showing = false; // 在释放锁之后才能设置为 false
-                    timer.Stop(); // 停止定时器
-                    timer.Dispose(); // 释放资源
-                };
-                timer.Start();
+                return;
             }
+            _showing = true;
+            await Application.Current.Dispatcher.BeginInvoke(async () => await ShowNotificationAsync(expectTime));
         }
     }
 
     private async Task ShowNotificationAsync(double expectTime)
     {
+        var mask = NotificationContent.CreateTwoIconsMask("地震预警", PackIconKind.HomeAlert, PackIconKind.ExitRun);
+        mask.Duration = TimeSpan.FromSeconds(3);
         var notice = new NotificationRequest
         {
-            MaskContent = new EarthquakeNotificationProviderControl("EarthquakeNotifyMask", EarthquakeInfo, LocalPosition),
-            MaskDuration = TimeSpan.FromSeconds(3),
-            OverlayContent = new EarthquakeNotificationProviderControl("EarthquakeNotifyOverlay", EarthquakeInfo, LocalPosition),
-            OverlayDuration = EarthquakeInfo.OriginTime.AddSeconds(expectTime) - DateTime.Now.AddSeconds(3)
+            MaskContent = mask,
+            OverlayContent = new NotificationContent()
+            {
+                Content = new EarthquakeNotificationProviderControl(EarthquakeInfo, LocalPosition),
+                Duration = TimeSpan.FromSeconds(expectTime-3),
+            }
+
         };
-        await NotificationHostService.ShowNotificationAsync(notice);
+        await ShowNotificationAsync(notice);
+        _showing = false;
     }
 
-    public async void APIMonitor()
+    public async Task WSMonitor()
     {
-        using var client = new HttpClient();
-        while (true)
+        using var ws = new ClientWebSocket();
+        var uri = new Uri(Encoding.UTF8.GetString(Convert.FromBase64String("d3NzOi8vd3MuZmFuc3R1ZGlvLnRlY2gvaWNs")));
+
+        try
         {
-            try
+            await ws.ConnectAsync(uri, CancellationToken.None);
+            Debug.WriteLine("✅ WebSocket 已连接");
+
+            var buffer = new byte[4096];
+
+            while (ws.State == WebSocketState.Open)
             {
-                await Task.Delay(1000);
-                if (!_testing)
+                try
                 {
-                    EarthquakeInfo.UpdateInfo(await GetEarthQuake());
+                    var result = await ws.ReceiveAsync(buffer, CancellationToken.None);
+
+                    if (result.MessageType == WebSocketMessageType.Close)
+                    {
+                        Debug.WriteLine("⚠️ WebSocket 关闭: " + result.CloseStatus);
+                        await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None);
+                        break;
+                    }
+
+                    var json = Encoding.UTF8.GetString(buffer, 0, result.Count);
+
+                    if (!_sharedService.Testing && !string.IsNullOrWhiteSpace(json))
+                    {
+                        var earthquakeInfo = JsonSerializer.Deserialize<EarthquakeInfo>(json, options);
+                        if (earthquakeInfo.Data != null && earthquakeInfo.Md5 != EarthquakeInfo.Md5)
+                        {
+                            EarthquakeInfo.UpdateFrom(earthquakeInfo);
+                            Update();
+                        }
+                        else if (_bufferedEarthquakeInfo != null)
+                        {
+                            EarthquakeInfo.UpdateFrom(_bufferedEarthquakeInfo);
+                            Update();
+                            _bufferedEarthquakeInfo = null;
+                        }
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("接收错误: " + ex.Message);
                 }
             }
-            catch (Exception e)
-            {
-                Debug.Write(e.Message);
-            }
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine("连接错误: " + e.Message);
         }
     }
-    public static async Task<EarthquakeInfo> GetEarthQuake()
-    {
-        using var httpClient = new HttpClient();
-        using var response = await httpClient.GetAsync("https://api.wolfx.jp/sc_eew.json").ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        await using var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-        var options = new JsonSerializerOptions();
-        options.Converters.Add(new DateTimeConverter());
-        return await JsonSerializer.DeserializeAsync<EarthquakeInfo>(stream,options);
-    }
-
-    public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }
