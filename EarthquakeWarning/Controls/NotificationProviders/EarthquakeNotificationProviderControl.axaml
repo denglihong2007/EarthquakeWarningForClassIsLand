@@ -1,0 +1,39 @@
+<UserControl x:Class="EarthquakeWarning.Controls.NotificationProviders.EarthquakeNotificationProviderControl"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:EarthquakeWarning.Controls.NotificationProviders"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters1="clr-namespace:ClassIsland.Core.Converters;assembly=ClassIsland.Core"
+             xmlns:converters2="clr-namespace:EarthquakeWarning.Converters"
+             mc:Ignorable="d"
+             d:DesignHeight="300" d:DesignWidth="300">
+    <UserControl.Resources>
+        <converters1:TimeSpanToTotalSecondsConverter x:Key="TimeSpanToTotalSecondsConverter" />
+        <converters2:IntensityToColorConverter x:Key="IntensityToColorConverter" />
+    </UserControl.Resources>
+    <StackPanel Orientation="Horizontal" Spacing="20" Margin="20,0">
+        <TextBlock VerticalAlignment="Center">
+            <Run Text="预警第"/>
+            <Run Text="{Binding Updates, Mode=OneWay}"/>
+            <Run Text="报"/>
+        </TextBlock>
+        <TextBlock VerticalAlignment="Center">
+            <Run Text="{Binding PlaceName, Mode=OneWay}"/>
+            <Run Text="发生"/>
+            <Run Text="{Binding Magnitude, Mode=OneWay}"/>
+            <Run Text="级地震"/>
+        </TextBlock>
+        <TextBlock VerticalAlignment="Center">
+            <Run Text="本地烈度"/>
+            <Run Text="{Binding LocalIntensity}" FontWeight="Bold" FontSize="{DynamicResource MainWindowSecondaryFontSize}" Foreground="{Binding LocalIntensity, Converter={StaticResource IntensityToColorConverter}}"/>
+        </TextBlock>
+        <TextBlock VerticalAlignment="Center">
+            <Run Text="横波还有"/>
+            <Run Text="{Binding Time, Converter={StaticResource TimeSpanToTotalSecondsConverter}, Mode=OneWay}" FontSize="{DynamicResource MainWindowSecondaryFontSize}" FontWeight="Bold"/>
+            <Run Text="秒到达"/>
+        </TextBlock>
+    </StackPanel>
+</UserControl>
+

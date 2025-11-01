@@ -15,7 +15,6 @@ namespace EarthquakeWarning
         [STAThread]
         public override void Initialize(HostBuilderContext context, IServiceCollection services)
         {
-            services.AddSingleton<SharedService>();
             services.AddNotificationProvider<EarthquakeNotificationProvider, EarthquakeNotificationProviderSettingsControl>();
         }
     }

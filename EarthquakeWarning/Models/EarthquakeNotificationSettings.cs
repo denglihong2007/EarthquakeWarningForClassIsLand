@@ -12,4 +12,6 @@ public partial class EarthquakeNotificationSettings : ObservableRecipient
     private double _threshold = 2.0;
     [ObservableProperty]
     private string _info = "";
+    [ObservableProperty]
+    private EarthquakeInfo earthquakeInfo = new();
 }
