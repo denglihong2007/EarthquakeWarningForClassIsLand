@@ -14,4 +14,6 @@ public partial class EarthquakeNotificationSettings : ObservableRecipient
     private string _info = "";
     [ObservableProperty]
     private EarthquakeInfo earthquakeInfo = new();
+    [ObservableProperty]
+    private string _serverInfo = "";
 }

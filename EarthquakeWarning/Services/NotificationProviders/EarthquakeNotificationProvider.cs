@@ -1,10 +1,12 @@
-﻿using Avalonia.Threading;
+﻿using Avalonia.Media;
+using Avalonia.Threading;
 using ClassIsland.Core.Abstractions.Services.NotificationProviders;
 using ClassIsland.Core.Attributes;
 using ClassIsland.Core.Controls;
 using ClassIsland.Core.Models.Notification;
 using EarthquakeWarning.Calculators;
 using EarthquakeWarning.Controls.NotificationProviders;
+using EarthquakeWarning.Converters;
 using EarthquakeWarning.Models;
 using System.Diagnostics;
 using System.Net.WebSockets;
@@ -68,6 +70,7 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
     {
         var mask = NotificationContent.CreateTwoIconsMask("地震预警", "\uEF5D", "\uED35");
         mask.Duration = TimeSpan.FromSeconds(3);
+        //mask.Color = new SolidColorBrush((new IntensityToColorConverter().Convert(Settings.Threshold, null, null, null) as Avalonia.Media.Color? ?? Avalonia.Media.Colors.Red));
         var notice = new NotificationRequest
         {
             MaskContent = mask,
@@ -127,6 +130,14 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
                         if (jsonDocument.RootElement.TryGetProperty("type", out var typeElement) &&
                             typeElement.GetString() == "heartbeat")
                         {
+                            if (jsonDocument.RootElement.TryGetProperty("timestamp", out JsonElement timestampElement) && timestampElement.ValueKind != JsonValueKind.Null)
+                            {
+                                if (timestampElement.TryGetInt64(out long timestampMs))
+                                {
+                                    DateTime lastHeartbeatTime = DateTimeOffset.FromUnixTimeMilliseconds(timestampMs).LocalDateTime;
+                                    Settings.ServerInfo = $"上一个心跳包时间戳：{lastHeartbeatTime:yyyy-MM-dd HH:mm:ss}";
+                                }
+                            }
                             continue;
                         }
                         var earthquakeInfo = JsonSerializer.Deserialize<EarthquakeInfo>(json, options);

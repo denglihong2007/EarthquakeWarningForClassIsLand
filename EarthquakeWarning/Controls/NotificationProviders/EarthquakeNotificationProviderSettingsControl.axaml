@@ -14,6 +14,7 @@
     <ScrollViewer>
         <StackPanel DataContext="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=local:EarthquakeNotificationProviderSettingsControl}}">
             <TextBlock TextWrapping="Wrap" Text="您理解地震预警信息由“中国地震预警网”提供，API由“FAN Studio”提供，插件作者不对其拥有任何控制权。插件作者对其预警信息的准确性、有效性、及时性均不作承诺和保证，亦不保证地震预警服务能够满足您的所有需求。" Margin="10,0,10,10" />
+            <TextBlock TextWrapping="Wrap" Text="{Binding Settings.ServerInfo}" Margin="10,0,10,10" />
             <TextBlock TextWrapping="Wrap" Text="{Binding Settings.Info}" Margin="10,0,10,10" />
             <Grid>
                 <Grid.RowDefinitions>

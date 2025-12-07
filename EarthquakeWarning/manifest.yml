@@ -7,7 +7,7 @@ name: 地震预警
 description: 地震能预警，预警能救命
 entranceAssembly: "EarthquakeWarning.dll"
 url: https://github.com/denglihong2007/EarthquakeWarningForClassIsLand
-version: 0.6.0.0
+version: 0.6.1.0
 apiVersion: 2.0.0.0
 author: 电排骨
 repoOwner: denglihong2007
