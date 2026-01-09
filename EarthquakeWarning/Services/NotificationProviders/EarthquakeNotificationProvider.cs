@@ -4,6 +4,7 @@ using ClassIsland.Core.Abstractions.Services.NotificationProviders;
 using ClassIsland.Core.Attributes;
 using ClassIsland.Core.Controls;
 using ClassIsland.Core.Models.Notification;
+using ClassIsland.Platforms.Abstraction;
 using EarthquakeWarning.Calculators;
 using EarthquakeWarning.Controls.NotificationProviders;
 using EarthquakeWarning.Converters;
@@ -70,7 +71,7 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
     {
         var mask = NotificationContent.CreateTwoIconsMask("地震预警", "\uEF5D", "\uED35");
         mask.Duration = TimeSpan.FromSeconds(3);
-        //mask.Color = new SolidColorBrush((new IntensityToColorConverter().Convert(Settings.Threshold, null, null, null) as Avalonia.Media.Color? ?? Avalonia.Media.Colors.Red));
+        mask.Color = new SolidColorBrush((new IntensityToColorConverter().Convert(Settings.Threshold, null, null, null) as Avalonia.Media.Color? ?? Avalonia.Media.Colors.Red));
         var notice = new NotificationRequest
         {
             MaskContent = mask,
