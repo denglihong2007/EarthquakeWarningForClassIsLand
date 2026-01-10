@@ -47,10 +47,10 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
                 if (obj is null) continue;
                 double distance = HuaniaEarthQuakeCalculator.GetDistance(Settings.Latitude, Settings.Longitude, obj.Latitude, obj.Longitude);
                 double threshold = HuaniaEarthQuakeCalculator.GetIntensity(obj.Magnitude, distance);
-                Settings.Info = $"在{obj.ShockTime}时，{obj.PlaceName}({obj.Latitude} {obj.Longitude})发生{obj.Magnitude}级地震，震源深度{obj.Depth}km。本地距离{distance:F0}km，本地烈度{threshold:F1}。";
+                Settings.Info = $"在{obj.ShockTime}时，{obj.PlaceName}({obj.Latitude} {obj.Longitude})发生{obj.Magnitude}级地震，震源深度{(obj.Depth is null ? "未知" : obj.Depth)}km。本地距离{distance:F0}km，本地烈度{threshold:F1}。";
                 if (threshold > Settings.Threshold && !_showing)
                 {
-                    double expectTime = HuaniaEarthQuakeCalculator.GetCountDownSeconds(obj.Depth, distance);
+                    double expectTime = HuaniaEarthQuakeCalculator.GetCountDownSeconds(obj.Depth??10.0, distance);
                     DateTime pWaveArriveTime = DateTime.Parse(obj.ShockTime).AddSeconds(expectTime);
                     if (DateTime.Now >= pWaveArriveTime)
                     {

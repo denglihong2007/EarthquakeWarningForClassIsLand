@@ -10,7 +10,7 @@ public class Data
     public int Updates { get; set; }
     public double Latitude { get; set; }
     public double Longitude { get; set; }
-    public double Depth { get; set; }
+    public double? Depth { get; set; }
     public string PlaceName { get; set; }
     public string ShockTime { get; set; }
     public string UpdateTime { get; set; }

@@ -7,34 +7,90 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:ci="http://classisland.tech/schemas/xaml/core"
     xmlns:local="clr-namespace:EarthquakeWarning.Controls.NotificationProviders"
+    xmlns:ui="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
     xmlns:models="clr-namespace:EarthquakeWarning.Models"
-    xmlns:controls="clr-namespace:ClassIsland.Core.Controls;assembly=ClassIsland.Core"
     mc:Ignorable="d"
-    d:DesignHeight="300" d:DesignWidth="300">
-    <ScrollViewer>
-        <StackPanel DataContext="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=local:EarthquakeNotificationProviderSettingsControl}}">
-            <TextBlock TextWrapping="Wrap" Text="您理解地震预警信息由“中国地震预警网”提供，API由“FAN Studio”提供，插件作者不对其拥有任何控制权。插件作者对其预警信息的准确性、有效性、及时性均不作承诺和保证，亦不保证地震预警服务能够满足您的所有需求。" Margin="10,0,10,10" />
-            <TextBlock TextWrapping="Wrap" Text="{Binding Settings.ServerInfo}" Margin="10,0,10,10" />
-            <TextBlock TextWrapping="Wrap" Text="{Binding Settings.Info}" Margin="10,0,10,10" />
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="纬度" Margin="10" VerticalAlignment="Center" HorizontalAlignment ="Center"/>
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="经度" Margin="10" VerticalAlignment="Center" HorizontalAlignment ="Center"/>
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="烈度阈值" Margin="10" VerticalAlignment="Center" HorizontalAlignment ="Center"/>
-                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Latitude}" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
-                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Longitude}" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
-                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Threshold}" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
-                <Button x:Name="btnExample" Grid.Row="3" Grid.Column="1" Content="预警演示" Margin="10" HorizontalAlignment="Right" VerticalAlignment="Center" Click="btnExample_Click"/>
-            </Grid>
+    d:DesignHeight="600" d:DesignWidth="450">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="4" DataContext="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=local:EarthquakeNotificationProviderSettingsControl}}">
+            
+            <ui:InfoBar Title="免责声明"
+                        IsOpen="True"
+                        IsClosable="False"
+                        Severity="Informational"
+                        Message="地震预警信息由“中国地震预警网”提供，API由“FAN Studio”提供。作者不对信息的准确性、有效性、及时性作承诺和保证。" />
+
+            <TextBlock Text="服务状态" Theme="{StaticResource BodyStrongTextBlockStyle}" Margin="2,8,0,0"/>
+            <ui:SettingsExpander Header="服务器信息"
+                                 Description="{Binding Settings.ServerInfo}">
+                <ui:SettingsExpander.IconSource>
+                    <ui:SymbolIconSource Symbol="Cloud" />
+                </ui:SettingsExpander.IconSource>
+                <ui:SettingsExpander.Footer>
+                    <ui:SymbolIcon Symbol="Clock" Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                </ui:SettingsExpander.Footer>
+            </ui:SettingsExpander>
+
+            <ui:SettingsExpander Header="当前数据摘要"
+                                 Description="{Binding Settings.Info}">
+                <ui:SettingsExpander.IconSource>
+                    <ui:SymbolIconSource Symbol="Code" />
+                </ui:SettingsExpander.IconSource>
+            </ui:SettingsExpander>
+
+            <TextBlock Text="预警配置" Theme="{StaticResource BodyStrongTextBlockStyle}" Margin="2,8,0,0"/>
+            
+            <ui:SettingsExpander Header="地理位置" 
+                                 Description="设置接收预警的参考坐标"
+                                 IconSource="Target"
+                                 IsExpanded="True">
+                <ui:SettingsExpander.Footer>
+                    <Button Content="自动定位" 
+                            Click="btnLocate_Click" 
+                            Classes="accent"
+                            x:Name="btnLocate"/>
+                </ui:SettingsExpander.Footer>
+
+                <ui:SettingsExpanderItem Content="纬度">
+                    <ui:SettingsExpanderItem.Footer>
+                        <TextBox Width="150" Text="{Binding Settings.Latitude}" Watermark="例如: 30.65"/>
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+
+                <ui:SettingsExpanderItem Content="经度">
+                    <ui:SettingsExpanderItem.Footer>
+                        <TextBox Width="150" Text="{Binding Settings.Longitude}" Watermark="例如: 104.06"/>
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+            </ui:SettingsExpander>
+
+            <ui:SettingsExpander Header="烈度阈值"
+                                 IconSource="Filter"
+                                 Description="仅当本地预估烈度大于该值时触发提醒">
+                <ui:SettingsExpander.Footer>
+                    <NumericUpDown Width="150" 
+                                   Value="{Binding Settings.Threshold}" 
+                                   Minimum="0" Maximum="12" 
+                                   Increment="0.1" />
+                </ui:SettingsExpander.Footer>
+            </ui:SettingsExpander>
+
+            <TextBlock Text="调试与测试" Theme="{StaticResource BodyStrongTextBlockStyle}" Margin="2,8,0,0"/>
+            <ui:SettingsExpander Header="预警演练"
+                                 Description="发送一次模拟地震预警通知以验证功能"
+                                 IconSource="Play"
+                                 ActionIconSource="ChevronRight"
+                                 IsClickEnabled="True"
+                                 x:Name="btnExample"
+                                 Click="btnExample_Click" />
+
+            <TextBlock Text="测试模式将模拟一次地震预警以检查通知系统是否正常。" 
+                       Theme="{StaticResource CaptionTextBlockStyle}" 
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       HorizontalAlignment="Center" 
+                       Margin="0,8,0,0"/>
+
         </StackPanel>
     </ScrollViewer>
 </ci:NotificationProviderControlBase>

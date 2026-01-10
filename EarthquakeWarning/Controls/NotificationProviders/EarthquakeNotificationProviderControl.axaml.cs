@@ -31,7 +31,7 @@ public partial class EarthquakeNotificationProviderControl : UserControl, INotif
         get 
         {
             double distance = HuaniaEarthQuakeCalculator.GetDistance(Latitude, Longitude, EarthquakeInfo.Data.Latitude, EarthquakeInfo.Data.Longitude);
-            double expectTime = HuaniaEarthQuakeCalculator.GetCountDownSeconds(EarthquakeInfo.Data.Depth, distance);
+            double expectTime = HuaniaEarthQuakeCalculator.GetCountDownSeconds(EarthquakeInfo.Data.Depth??10.0, distance);
             DateTime pWaveArriveTime = DateTime.Parse(EarthquakeInfo.Data.ShockTime).AddSeconds(expectTime);
             TimeSpan timeDifference = pWaveArriveTime - DateTime.Now;
             return timeDifference;

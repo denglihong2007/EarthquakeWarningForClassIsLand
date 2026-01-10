@@ -1,5 +1,6 @@
 using Avalonia.Interactivity;
 using ClassIsland.Core.Abstractions.Controls;
+using ClassIsland.Platforms.Abstraction;
 using EarthquakeWarning.Models;
 using System.Text.Json;
 
@@ -43,5 +44,17 @@ public partial class EarthquakeNotificationProviderSettingsControl : Notificatio
         await Task.Delay(20000);
         btnExample.IsEnabled = true;
         Settings.EarthquakeInfo.UpdateFrom(buffer);
+    }
+
+    private async void btnLocate_Click(object? sender, RoutedEventArgs e)
+    {
+        btnLocate.IsEnabled = false;
+        var location = await PlatformServices.LocationService.GetLocationAsync();
+        if(location is not null)
+        {
+            Settings.Longitude = location.Longitude;
+            Settings.Latitude = location.Latitude;
+        }
+        btnLocate.IsEnabled = true;
     }
 }
