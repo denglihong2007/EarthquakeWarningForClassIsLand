@@ -2,9 +2,7 @@
 using Avalonia.Threading;
 using ClassIsland.Core.Abstractions.Services.NotificationProviders;
 using ClassIsland.Core.Attributes;
-using ClassIsland.Core.Controls;
 using ClassIsland.Core.Models.Notification;
-using ClassIsland.Platforms.Abstraction;
 using EarthquakeWarning.Calculators;
 using EarthquakeWarning.Controls.NotificationProviders;
 using EarthquakeWarning.Converters;

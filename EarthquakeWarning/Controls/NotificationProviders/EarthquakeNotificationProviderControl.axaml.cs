@@ -13,6 +13,7 @@ public partial class EarthquakeNotificationProviderControl : UserControl, INotif
     private double Longitude { get; set; }
     public EarthquakeInfo EarthquakeInfo { get; set; }
     public string PlaceName { get; set; }
+    public int Distance { get; set; }
     public int Updates { get; set; }
     public double Magnitude { get; set; }
 
@@ -54,10 +55,12 @@ public partial class EarthquakeNotificationProviderControl : UserControl, INotif
         {
             PlaceName = earthquakeInfo.Data.PlaceName;
             Updates = earthquakeInfo.Data.Updates;
+            Distance = (int)Math.Round(HuaniaEarthQuakeCalculator.GetDistance(Latitude, Longitude, earthquakeInfo.Data.Latitude, earthquakeInfo.Data.Longitude));
             Magnitude = earthquakeInfo.Data.Magnitude;
 
             OnPropertyChanged(nameof(PlaceName));
             OnPropertyChanged(nameof(Updates));
+            OnPropertyChanged(nameof(Distance));
             OnPropertyChanged(nameof(Magnitude));
             OnPropertyChanged(nameof(Time));
             OnPropertyChanged(nameof(LocalIntensity));

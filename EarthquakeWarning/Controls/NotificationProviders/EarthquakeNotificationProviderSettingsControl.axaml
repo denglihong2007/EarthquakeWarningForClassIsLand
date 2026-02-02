@@ -48,7 +48,6 @@
                 <ui:SettingsExpander.Footer>
                     <Button Content="自动定位" 
                             Click="btnLocate_Click" 
-                            Classes="accent"
                             x:Name="btnLocate"/>
                 </ui:SettingsExpander.Footer>
 

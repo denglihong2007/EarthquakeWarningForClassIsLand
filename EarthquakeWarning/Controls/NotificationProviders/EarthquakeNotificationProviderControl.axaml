@@ -13,7 +13,7 @@
         <converters1:TimeSpanToTotalSecondsConverter x:Key="TimeSpanToTotalSecondsConverter" />
         <converters2:IntensityToColorConverter x:Key="IntensityToColorConverter" />
     </UserControl.Resources>
-    <StackPanel Orientation="Horizontal" Spacing="20" Margin="20,0">
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="20" Margin="20,0">
         <TextBlock VerticalAlignment="Center">
             <Run Text="预警第"/>
             <Run Text="{Binding Updates, Mode=OneWay}"/>
@@ -24,6 +24,11 @@
             <Run Text="发生"/>
             <Run Text="{Binding Magnitude, Mode=OneWay}"/>
             <Run Text="级地震"/>
+        </TextBlock>
+        <TextBlock VerticalAlignment="Center">
+            <Run Text="震源距离"/>
+            <Run Text="{Binding Distance, Mode=OneWay}"/>
+            <Run Text="公里"/>
         </TextBlock>
         <TextBlock VerticalAlignment="Center">
             <Run Text="本地烈度"/>
