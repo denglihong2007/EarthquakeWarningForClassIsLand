@@ -30,8 +30,8 @@ public partial class EarthquakeNotificationProviderSettingsControl : Notificatio
                 Longitude = 103.4,
                 Depth = 14,
                 PlaceName = "四川省阿坝藏族羌族自治州汶川县",
-                ShockTime = startTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                UpdateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                ShockTime = EarthquakeTime.Format(startTime),
+                UpdateTime = EarthquakeTime.Format(DateTime.Now),
                 Magnitude = 4.0 + (i + 1.0) * 0.8,
                 EpiIntensity = 12
             });

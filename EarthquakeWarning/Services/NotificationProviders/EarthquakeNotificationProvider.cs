@@ -47,7 +47,7 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
                 if (threshold > Settings.Threshold && !_showing)
                 {
                     double expectTime = HuaniaEarthQuakeCalculator.GetCountDownSeconds(obj.Depth??10.0, distance);
-                    DateTime pWaveArriveTime = DateTime.Parse(obj.ShockTime).AddSeconds(expectTime);
+                    DateTime pWaveArriveTime = EarthquakeTime.Parse(obj.ShockTime).AddSeconds(expectTime);
                     if (DateTime.Now >= pWaveArriveTime)
                     {
                         continue;
@@ -102,7 +102,7 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
                         _lastEewKey = eewKey;
                     }
 
-                    Settings.ServerInfo = $"上一次数据更新：{DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+                    Settings.ServerInfo = $"上一次数据更新：{EarthquakeTime.Format(DateTime.Now)}";
                 }
 
                 await Task.Delay(PollIntervalMs);
