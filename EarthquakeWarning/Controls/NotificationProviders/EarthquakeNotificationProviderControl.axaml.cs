@@ -21,8 +21,8 @@ public partial class EarthquakeNotificationProviderControl : UserControl, INotif
     {
         get
         {
-            double distance = HuaniaEarthQuakeCalculator.GetDistance(Latitude, Longitude, EarthquakeInfo.Data.Latitude, EarthquakeInfo.Data.Longitude);
-            return HuaniaEarthQuakeCalculator.GetIntensity(EarthquakeInfo.Data.Magnitude, distance).ToString("F1");
+            double distance = HuaniaEarthQuakeCalculator.GetDistance(Latitude, Longitude, EarthquakeInfo.Latitude, EarthquakeInfo.Longitude);
+            return HuaniaEarthQuakeCalculator.GetIntensity(EarthquakeInfo.Magnitude, distance).ToString("F1");
         }
     }
 
@@ -31,9 +31,9 @@ public partial class EarthquakeNotificationProviderControl : UserControl, INotif
     {
         get 
         {
-            double distance = HuaniaEarthQuakeCalculator.GetDistance(Latitude, Longitude, EarthquakeInfo.Data.Latitude, EarthquakeInfo.Data.Longitude);
-            double expectTime = HuaniaEarthQuakeCalculator.GetCountDownSeconds(EarthquakeInfo.Data.Depth??10.0, distance);
-            DateTime pWaveArriveTime = DateTime.Parse(EarthquakeInfo.Data.ShockTime).AddSeconds(expectTime);
+            double distance = HuaniaEarthQuakeCalculator.GetDistance(Latitude, Longitude, EarthquakeInfo.Latitude, EarthquakeInfo.Longitude);
+            double expectTime = HuaniaEarthQuakeCalculator.GetCountDownSeconds(EarthquakeInfo.Depth??10.0, distance);
+            DateTime pWaveArriveTime = DateTime.Parse(EarthquakeInfo.ShockTime).AddSeconds(expectTime);
             TimeSpan timeDifference = pWaveArriveTime - DateTime.Now;
             return timeDifference;
         }
@@ -53,10 +53,10 @@ public partial class EarthquakeNotificationProviderControl : UserControl, INotif
         };
         timer.Tick += (s, e) =>
         {
-            PlaceName = earthquakeInfo.Data.PlaceName;
-            Updates = earthquakeInfo.Data.Updates;
-            Distance = (int)Math.Round(HuaniaEarthQuakeCalculator.GetDistance(Latitude, Longitude, earthquakeInfo.Data.Latitude, earthquakeInfo.Data.Longitude));
-            Magnitude = earthquakeInfo.Data.Magnitude;
+            PlaceName = earthquakeInfo.PlaceName;
+            Updates = earthquakeInfo.Updates;
+            Distance = (int)Math.Round(HuaniaEarthQuakeCalculator.GetDistance(Latitude, Longitude, earthquakeInfo.Latitude, earthquakeInfo.Longitude));
+            Magnitude = earthquakeInfo.Magnitude;
 
             OnPropertyChanged(nameof(PlaceName));
             OnPropertyChanged(nameof(Updates));

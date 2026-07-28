@@ -8,8 +8,6 @@ using EarthquakeWarning.Controls.NotificationProviders;
 using EarthquakeWarning.Converters;
 using EarthquakeWarning.Models;
 using System.Diagnostics;
-using System.Net.WebSockets;
-using System.Text;
 using System.Text.Json;
 
 namespace EarthquakeWarning.Services.NotificationProviders;
@@ -17,22 +15,22 @@ namespace EarthquakeWarning.Services.NotificationProviders;
 [NotificationProviderInfo("B27C0AF3-C917-44DE-A61D-8010C3F3FB92", "地震预警", "\uEF5C", "在地震发生时，根据用户设置发出地震预警")]
 public class EarthquakeNotificationProvider : NotificationProviderBase<EarthquakeNotificationSettings>
 {
-    private const int HeartbeatIntervalMs = 60000;
+    private const int PollIntervalMs = 1000;
     private const int ReconnectDelayMs = 5000;
-    private static readonly Uri NewUri = new("wss://ws.fanstudio.tech/cea-pr");
-
-    private readonly JsonSerializerOptions options = new()
+    private static readonly Uri EewUri = new("https://api.wolfx.jp/cenc_eew.json");
+    private static readonly HttpClient HttpClient = new()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Timeout = TimeSpan.FromSeconds(10),
     };
 
     public EarthquakeNotificationProvider()
     {
-        Task.Run(WSMonitor);
+        Task.Run(EewMonitor);
         Task.Run(DataMonitor);
     }
 
     private bool _showing = false;
+    private string? _lastEewKey;
 
     private async Task DataMonitor()
     {
@@ -41,8 +39,8 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
             try
             {
                 await Task.Delay(500);
-                var obj = Settings.EarthquakeInfo.Data;
-                if (obj is null) continue;
+                var obj = Settings.EarthquakeInfo;
+                if (string.IsNullOrWhiteSpace(obj.Id)) continue;
                 double distance = HuaniaEarthQuakeCalculator.GetDistance(Settings.Latitude, Settings.Longitude, obj.Latitude, obj.Longitude);
                 double threshold = HuaniaEarthQuakeCalculator.GetIntensity(obj.Magnitude, distance);
                 Settings.Info = $"在{obj.ShockTime}时，{obj.PlaceName}({obj.Latitude} {obj.Longitude})发生{obj.Magnitude}级地震，震源深度{(obj.Depth is null ? "未知" : obj.Depth)}km。本地距离{distance:F0}km，本地烈度{threshold:F1}。";
@@ -84,90 +82,36 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
         _showing = false;
     }
 
-    public async Task WSMonitor()
+    public async Task EewMonitor()
     {
         while (true)
         {
-            using var ws = new ClientWebSocket();
-            using var cts = new CancellationTokenSource();
-            var buffer = new byte[4096];
             try
             {
-                await ws.ConnectAsync(NewUri, cts.Token);
-                var heartbeatTask = Task.Run(async () =>
+                var json = await HttpClient.GetStringAsync(EewUri);
+                var eew = JsonSerializer.Deserialize<WolfxCencEew>(json);
+                if (eew is not null &&
+                    !string.IsNullOrWhiteSpace(eew.Id) &&
+                    !string.IsNullOrWhiteSpace(eew.OriginTime))
                 {
-                    while (!cts.Token.IsCancellationRequested)
+                    var earthquakeInfo = eew.ToEarthquakeInfo();
+                    var eewKey = $"{eew.Id}:{eew.ReportNum}";
+                    if (eewKey != _lastEewKey)
                     {
-                        await Task.Delay(HeartbeatIntervalMs, cts.Token);
+                        Settings.EarthquakeInfo.UpdateFrom(earthquakeInfo);
+                        _lastEewKey = eewKey;
                     }
-                }, cts.Token);
 
-                while (ws.State == WebSocketState.Open)
-                {
-                    using var receiveCts = new CancellationTokenSource(HeartbeatIntervalMs * 2); 
-                    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, receiveCts.Token);
-
-                    var receiveTask = ws.ReceiveAsync(buffer, linkedCts.Token);
-                    var completedTask = await Task.WhenAny(receiveTask, heartbeatTask);
-
-                    if (completedTask == heartbeatTask)
-                    {
-                        Debug.WriteLine("⚠️ 心跳超时，尝试关闭连接并重连...");
-                        throw new TimeoutException("Heartbeat timeout, forcing reconnect.");
-                    }
-                    var result = await receiveTask;
-                    if (result.MessageType == WebSocketMessageType.Close)
-                    {
-                        Debug.WriteLine("⚠️ WebSocket 关闭: " + result.CloseStatus);
-                        await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None);
-                        break;
-                    }
-                    var json = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                    if (!string.IsNullOrWhiteSpace(json))
-                    {
-                        var jsonDocument = JsonDocument.Parse(json);
-                        if (jsonDocument.RootElement.TryGetProperty("type", out var typeElement) &&
-                            typeElement.GetString() == "heartbeat")
-                        {
-                            if (jsonDocument.RootElement.TryGetProperty("timestamp", out JsonElement timestampElement) && timestampElement.ValueKind != JsonValueKind.Null)
-                            {
-                                if (timestampElement.TryGetInt64(out long timestampMs))
-                                {
-                                    DateTime lastHeartbeatTime = DateTimeOffset.FromUnixTimeMilliseconds(timestampMs).LocalDateTime;
-                                    Settings.ServerInfo = $"上一个心跳包时间戳：{lastHeartbeatTime:yyyy-MM-dd HH:mm:ss}";
-                                }
-                            }
-                            continue;
-                        }
-                        var earthquakeInfo = JsonSerializer.Deserialize<EarthquakeInfo>(json, options);
-                        if (earthquakeInfo?.Data != null && earthquakeInfo.Md5 != Settings.EarthquakeInfo.Md5)
-                        {
-                            Settings.EarthquakeInfo.UpdateFrom(earthquakeInfo);
-                        }
-                    }
+                    Settings.ServerInfo = $"上一次数据更新：{DateTime.Now:yyyy-MM-dd HH:mm:ss}";
                 }
-            }
-            catch (WebSocketException e) when (e.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely)
-            {
-                Debug.WriteLine($"连接被服务器提前关闭，尝试重连... 错误: {e.Message}");
-            }
-            catch (TimeoutException)
-            {
-                Debug.WriteLine("心跳/接收超时，强制重连...");
+
+                await Task.Delay(PollIntervalMs);
             }
             catch (Exception e)
             {
-                Debug.WriteLine($"连接/接收错误: {e.Message}，将在 {ReconnectDelayMs / 1000} 秒后重试。");
+                Debug.WriteLine($"获取地震预警数据失败: {e.Message}，将在 {ReconnectDelayMs / 1000} 秒后重试。");
+                await Task.Delay(ReconnectDelayMs);
             }
-            finally
-            {
-                cts.Cancel();
-                if (ws.State != WebSocketState.Closed)
-                {
-                    try { ws.Abort(); } catch {  }
-                }
-            }
-            await Task.Delay(ReconnectDelayMs);
         }
     }
 }

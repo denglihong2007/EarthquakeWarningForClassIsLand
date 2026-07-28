@@ -19,7 +19,7 @@
                         IsOpen="True"
                         IsClosable="False"
                         Severity="Informational"
-                        Message="地震预警信息由“中国地震预警网”提供，API由“FAN Studio”提供。作者不对信息的准确性、有效性、及时性作承诺和保证。" />
+                        Message="地震预警信息由中国地震台网提供，API 由 Wolfx 提供。作者不对信息的准确性、有效性、及时性作承诺和保证。" />
 
             <TextBlock Text="服务状态" Theme="{StaticResource BodyStrongTextBlockStyle}" Margin="2,8,0,0"/>
             <ui:SettingsExpander Header="服务器信息"

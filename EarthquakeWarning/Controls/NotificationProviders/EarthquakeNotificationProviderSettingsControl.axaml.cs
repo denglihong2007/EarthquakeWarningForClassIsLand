@@ -17,40 +17,39 @@ public partial class EarthquakeNotificationProviderSettingsControl : Notificatio
     {
         var buffer = JsonSerializer.Deserialize<EarthquakeInfo>(JsonSerializer.Serialize(Settings.EarthquakeInfo));
         btnExample.IsEnabled = false;
-        DateTime StartTime = DateTime.Now;
+        DateTime startTime = DateTime.Now;
         int eventId = 0;
         for (int i = 0; i < 6; i++)
         {
             Settings.EarthquakeInfo.UpdateFrom(new EarthquakeInfo
             {
-                Type = "Earthquake",
-                Data = new Data
-                {
-                    EventId = $"{i}",
-                    Updates = i + 1,
-                    Latitude = 31.0,
-                    Longitude = 103.4,
-                    Depth = 14,
-                    PlaceName = "ËÄ´¨Ê¡°¢°Ó²Ø×åÇ¼×å×ÔÖÎÖÝãë´¨ÏØ",
-                    ShockTime = StartTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                    UpdateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                    Magnitude = 4.0 + (i + 1.0) * 0.8,
-                    EpiIntensity = 12
-                },
-                Md5 = "example-md5-hash-" + (eventId + i)
+                Id = $"example-{eventId + i}",
+                EventId = $"{i}",
+                Updates = i + 1,
+                Latitude = 31.0,
+                Longitude = 103.4,
+                Depth = 14,
+                PlaceName = "å››å·çœé˜¿åè—æ—ç¾Œæ—è‡ªæ²»å·žæ±¶å·åŽ¿",
+                ShockTime = startTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                UpdateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                Magnitude = 4.0 + (i + 1.0) * 0.8,
+                EpiIntensity = 12
             });
             await Task.Delay(10000);
         }
         await Task.Delay(20000);
         btnExample.IsEnabled = true;
-        Settings.EarthquakeInfo.UpdateFrom(buffer);
+        if (buffer is not null)
+        {
+            Settings.EarthquakeInfo.UpdateFrom(buffer);
+        }
     }
 
     private async void btnLocate_Click(object? sender, RoutedEventArgs e)
     {
         btnLocate.IsEnabled = false;
         var location = await PlatformServices.LocationService.GetLocationAsync();
-        if(location is not null)
+        if (location is not null)
         {
             Settings.Longitude = location.Longitude;
             Settings.Latitude = location.Latitude;
