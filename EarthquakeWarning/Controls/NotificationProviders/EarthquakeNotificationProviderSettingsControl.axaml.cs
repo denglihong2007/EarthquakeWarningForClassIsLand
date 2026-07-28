@@ -2,6 +2,7 @@ using Avalonia.Interactivity;
 using ClassIsland.Core.Abstractions.Controls;
 using ClassIsland.Platforms.Abstraction;
 using EarthquakeWarning.Models;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace EarthquakeWarning.Controls.NotificationProviders;
@@ -48,12 +49,28 @@ public partial class EarthquakeNotificationProviderSettingsControl : Notificatio
     private async void btnLocate_Click(object? sender, RoutedEventArgs e)
     {
         btnLocate.IsEnabled = false;
-        var location = await PlatformServices.LocationService.GetLocationAsync();
-        if (location is not null)
+        locationErrorInfoBar.IsOpen = false;
+
+        try
         {
+            var location = await PlatformServices.LocationService.GetLocationAsync();
+            if (location is null)
+            {
+                locationErrorInfoBar.IsOpen = true;
+                return;
+            }
+
             Settings.Longitude = location.Longitude;
             Settings.Latitude = location.Latitude;
         }
-        btnLocate.IsEnabled = true;
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"自动定位失败: {ex}");
+            locationErrorInfoBar.IsOpen = true;
+        }
+        finally
+        {
+            btnLocate.IsEnabled = true;
+        }
     }
 }

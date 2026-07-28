@@ -64,6 +64,13 @@
                 </ui:SettingsExpanderItem>
             </ui:SettingsExpander>
 
+            <ui:InfoBar x:Name="locationErrorInfoBar"
+                        Title="无法自动定位"
+                        Message="请确认系统位置服务已开启，并允许 ClassIsland 访问位置信息后重试。"
+                        Severity="Warning"
+                        IsOpen="False"
+                        IsClosable="True" />
+
             <ui:SettingsExpander Header="烈度阈值"
                                  IconSource="Filter"
                                  Description="仅当本地预估烈度大于该值时触发提醒">
