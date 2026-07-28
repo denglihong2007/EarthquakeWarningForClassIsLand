@@ -42,9 +42,9 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
                 var obj = Settings.EarthquakeInfo;
                 if (string.IsNullOrWhiteSpace(obj.Id)) continue;
                 double distance = HuaniaEarthQuakeCalculator.GetDistance(Settings.Latitude, Settings.Longitude, obj.Latitude, obj.Longitude);
-                double threshold = HuaniaEarthQuakeCalculator.GetIntensity(obj.Magnitude, distance);
-                Settings.Info = $"在{obj.ShockTime}时，{obj.PlaceName}({obj.Latitude} {obj.Longitude})发生{obj.Magnitude}级地震，震源深度{(obj.Depth is null ? "未知" : obj.Depth)}km。本地距离{distance:F0}km，本地烈度{threshold:F1}。";
-                if (threshold > Settings.Threshold && !_showing)
+                double localIntensity = HuaniaEarthQuakeCalculator.GetIntensity(obj.Magnitude, distance);
+                Settings.Info = $"在{obj.ShockTime}时，{obj.PlaceName}({obj.Latitude} {obj.Longitude})发生{obj.Magnitude}级地震，震源深度{(obj.Depth is null ? "未知" : obj.Depth)}km。本地距离{distance:F0}km，本地烈度{localIntensity:F1}。";
+                if (localIntensity > Settings.Threshold && !_showing)
                 {
                     double expectTime = HuaniaEarthQuakeCalculator.GetCountDownSeconds(obj.Depth??10.0, distance);
                     DateTime pWaveArriveTime = EarthquakeTime.Parse(obj.ShockTime).AddSeconds(expectTime);
@@ -53,7 +53,7 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
                         continue;
                     }
                     _showing = true;
-                    await Dispatcher.UIThread.InvokeAsync(async () => await ShowNotificationAsync((pWaveArriveTime - DateTime.Now).TotalSeconds));
+                    await Dispatcher.UIThread.InvokeAsync(async () => await ShowNotificationAsync((pWaveArriveTime - DateTime.Now).TotalSeconds, localIntensity));
                 }
             }
             catch (Exception ex)
@@ -63,11 +63,11 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
         }
     }
 
-    private async Task ShowNotificationAsync(double expectTime)
+    private async Task ShowNotificationAsync(double expectTime, double localIntensity)
     {
         var mask = NotificationContent.CreateTwoIconsMask("地震预警", "\uEF5D", "\uED35");
         mask.Duration = TimeSpan.FromSeconds(3);
-        mask.Color = new SolidColorBrush((new IntensityToColorConverter().Convert(Settings.Threshold, null, null, null) as Avalonia.Media.Color? ?? Avalonia.Media.Colors.Red));
+        mask.Color = new SolidColorBrush(IntensityToColorConverter.GetColor(localIntensity));
         var notice = new NotificationRequest
         {
             MaskContent = mask,
