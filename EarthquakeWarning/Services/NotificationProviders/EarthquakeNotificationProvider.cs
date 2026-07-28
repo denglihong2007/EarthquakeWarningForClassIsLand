@@ -7,6 +7,7 @@ using EarthquakeWarning.Calculators;
 using EarthquakeWarning.Controls.NotificationProviders;
 using EarthquakeWarning.Converters;
 using EarthquakeWarning.Models;
+using EarthquakeWarning.Services;
 using System.Diagnostics;
 using System.Text.Json;
 
@@ -31,6 +32,7 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
 
     private bool _showing = false;
     private string? _lastEewKey;
+    private string? _lastActionOriginTime;
 
     private async Task DataMonitor()
     {
@@ -44,7 +46,7 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
                 double distance = HuaniaEarthQuakeCalculator.GetDistance(Settings.Latitude, Settings.Longitude, obj.Latitude, obj.Longitude);
                 double localIntensity = HuaniaEarthQuakeCalculator.GetIntensity(obj.Magnitude, distance);
                 Settings.Info = $"在{obj.ShockTime}时，{obj.PlaceName}({obj.Latitude} {obj.Longitude})发生{obj.Magnitude}级地震，震源深度{(obj.Depth is null ? "未知" : obj.Depth)}km。本地距离{distance:F0}km，本地烈度{localIntensity:F1}。";
-                if (localIntensity > Settings.Threshold && !_showing)
+                if (localIntensity > Settings.Threshold)
                 {
                     double expectTime = HuaniaEarthQuakeCalculator.GetCountDownSeconds(obj.Depth??10.0, distance);
                     DateTime pWaveArriveTime = EarthquakeTime.Parse(obj.ShockTime).AddSeconds(expectTime);
@@ -52,6 +54,18 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
                     {
                         continue;
                     }
+
+                    if (obj.ShockTime != _lastActionOriginTime)
+                    {
+                        _lastActionOriginTime = obj.ShockTime;
+                        _ = ExecuteConfiguredActionsAsync();
+                    }
+
+                    if (_showing)
+                    {
+                        continue;
+                    }
+
                     _showing = true;
                     await Dispatcher.UIThread.InvokeAsync(async () => await ShowNotificationAsync((pWaveArriveTime - DateTime.Now).TotalSeconds, localIntensity));
                 }
@@ -61,6 +75,59 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
                 Debug.WriteLine("DataMonitor 错误: " + ex.Message);
             }
         }
+    }
+
+    private async Task ExecuteConfiguredActionsAsync()
+    {
+        var errors = new List<string>();
+        var executedActions = new List<string>();
+        SetActionStatus("正在执行预警动作...");
+
+        if (Settings.IsCommandEnabled)
+        {
+            try
+            {
+                EarthquakeActionExecutor.ExecuteCommand(Settings.Command);
+                executedActions.Add("CMD 命令");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"执行地震预警 CMD 命令失败: {ex}");
+                errors.Add($"CMD：{ex.Message}");
+            }
+        }
+
+        if (Settings.IsAudioEnabled)
+        {
+            try
+            {
+                await EarthquakeActionExecutor.PlayAudioAtMaximumVolumeAsync(Settings.AudioFilePath);
+                executedActions.Add("音频");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"播放地震预警音频失败: {ex}");
+                errors.Add($"音频：{ex.Message}");
+            }
+        }
+
+        if (errors.Count > 0)
+        {
+            SetActionStatus(string.Join("；", errors));
+        }
+        else if (executedActions.Count > 0)
+        {
+            SetActionStatus($"已执行：{string.Join("、", executedActions)}");
+        }
+        else
+        {
+            SetActionStatus("未启用预警动作");
+        }
+    }
+
+    private void SetActionStatus(string status)
+    {
+        Dispatcher.UIThread.Post(() => Settings.ActionStatus = status);
     }
 
     private async Task ShowNotificationAsync(double expectTime, double localIntensity)

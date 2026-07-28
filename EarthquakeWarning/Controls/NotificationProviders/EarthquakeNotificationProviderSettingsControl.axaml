@@ -82,6 +82,47 @@
                 </ui:SettingsExpander.Footer>
             </ui:SettingsExpander>
 
+            <ui:SettingsExpander Header="预警动作"
+                                 IconSource="Play"
+                                 Description="{Binding Settings.ActionStatus}">
+                <ui:SettingsExpanderItem Content="执行 CMD 命令"
+                                         Description="达到预警阈值时，每个地震事件执行一次">
+                    <ui:SettingsExpanderItem.Footer>
+                        <ToggleSwitch IsChecked="{Binding Settings.IsCommandEnabled}" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+
+                <ui:SettingsExpanderItem Content="命令">
+                    <ui:SettingsExpanderItem.Footer>
+                        <TextBox Width="260"
+                                 Text="{Binding Settings.Command}"
+                                 IsEnabled="{Binding Settings.IsCommandEnabled}"
+                                 Watermark="例如: shutdown /s /t 60" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+
+                <ui:SettingsExpanderItem Content="播放音频"
+                                         Description="播放期间系统主音量设为最大，结束后恢复">
+                    <ui:SettingsExpanderItem.Footer>
+                        <ToggleSwitch IsChecked="{Binding Settings.IsAudioEnabled}" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+
+                <ui:SettingsExpanderItem Content="音频文件">
+                    <ui:SettingsExpanderItem.Footer>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBox Width="220"
+                                     Text="{Binding Settings.AudioFilePath}"
+                                     IsEnabled="{Binding Settings.IsAudioEnabled}"
+                                     Watermark="选择 WAV、MP3、AAC 或 WMA 文件" />
+                            <Button Content="选择"
+                                    IsEnabled="{Binding Settings.IsAudioEnabled}"
+                                    Click="btnSelectAudio_Click" />
+                        </StackPanel>
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+            </ui:SettingsExpander>
+
             <TextBlock Text="调试与测试" Theme="{StaticResource BodyStrongTextBlockStyle}" Margin="2,8,0,0"/>
             <ui:SettingsExpander Header="预警演练"
                                  Description="发送一次模拟地震预警通知以验证功能"
