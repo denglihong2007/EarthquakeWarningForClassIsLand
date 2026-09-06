@@ -10,6 +10,7 @@ using EarthquakeWarning.Models;
 using EarthquakeWarning.Services;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Net.Http;
 
 namespace EarthquakeWarning.Services.NotificationProviders;
 
@@ -18,7 +19,7 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
 {
     private const int PollIntervalMs = 1000;
     private const int ReconnectDelayMs = 5000;
-    private static readonly Uri EewUri = new("https://api.wolfx.jp/cenc_eew.json");
+    private static readonly Uri MiuiUri = new("https://srv.sec.miui.com/earthquake/warning/records");
     private static readonly HttpClient HttpClient = new()
     {
         Timeout = TimeSpan.FromSeconds(10),
@@ -31,8 +32,8 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
     }
 
     private bool _showing = false;
-    private string? _lastEewKey;
-    private string? _lastActionOriginTime;
+    private string? _lastMiuiKey;
+    private string? _lastActionEventId;
 
     private async Task DataMonitor()
     {
@@ -55,9 +56,10 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
                         continue;
                     }
 
-                    if (obj.ShockTime != _lastActionOriginTime)
+                    // MIUI eventId is stable across all updates of the same earthquake.
+                    if (!string.IsNullOrWhiteSpace(obj.EventId) && obj.EventId != _lastActionEventId)
                     {
-                        _lastActionOriginTime = obj.ShockTime;
+                        _lastActionEventId = obj.EventId;
                         _ = ExecuteConfiguredActionsAsync();
                     }
 
@@ -155,18 +157,31 @@ public class EarthquakeNotificationProvider : NotificationProviderBase<Earthquak
         {
             try
             {
-                var json = await HttpClient.GetStringAsync(EewUri);
-                var eew = JsonSerializer.Deserialize<WolfxCencEew>(json);
-                if (eew is not null &&
-                    !string.IsNullOrWhiteSpace(eew.Id) &&
-                    !string.IsNullOrWhiteSpace(eew.OriginTime))
+                using var content = new FormUrlEncodedContent(new Dictionary<string, string>
                 {
-                    var earthquakeInfo = eew.ToEarthquakeInfo();
-                    var eewKey = $"{eew.Id}:{eew.ReportNum}";
-                    if (eewKey != _lastEewKey)
+                    ["version"] = "2",
+                    ["sign"] = MiuiEarthquakeSigning.MakeSignature(new Dictionary<string, string>
                     {
-                        Settings.EarthquakeInfo.UpdateFrom(earthquakeInfo);
-                        _lastEewKey = eewKey;
+                        ["version"] = "2",
+                    }),
+                });
+                using var response = await HttpClient.PostAsync(MiuiUri, content);
+                response.EnsureSuccessStatusCode();
+                var json = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<MiuiEarthquakeResponse>(json);
+                if (result?.Code != 0)
+                {
+                    throw new InvalidOperationException($"MIUI API returned {result?.Code}: {result?.Description}");
+                }
+
+                var record = result.Data?.OrderByDescending(item => item.UpdateAt).FirstOrDefault();
+                if (record is not null && record.EventId != 0)
+                {
+                    var miuiKey = $"{record.EventId}:{record.Update}";
+                    if (miuiKey != _lastMiuiKey)
+                    {
+                        Settings.EarthquakeInfo.UpdateFrom(record.ToEarthquakeInfo());
+                        _lastMiuiKey = miuiKey;
                     }
 
                     Settings.ServerInfo = $"上一次数据更新：{EarthquakeTime.Format(DateTime.Now)}";
