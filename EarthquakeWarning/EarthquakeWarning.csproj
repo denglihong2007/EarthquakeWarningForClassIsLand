@@ -9,14 +9,15 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<ClassIslandPluginSdkVersion>1.5.0.2</ClassIslandPluginSdkVersion>
+		<ClassIslandPluginSdkVersion>2.0.0.1</ClassIslandPluginSdkVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="ClassIsland.PluginSdk" Version="2.0.0.1">
 			<ExcludeAssets>runtime</ExcludeAssets>
 		</PackageReference>
-		<PackageReference Include="NAudio" Version="2.2.1" />
+		<PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
+		<PackageReference Include="System.Speech" Version="8.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

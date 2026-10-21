@@ -26,7 +26,7 @@
             <Run Text="级地震"/>
         </TextBlock>
         <TextBlock VerticalAlignment="Center">
-            <Run Text="震源距离"/>
+            <Run Text="震中距离"/>
             <Run Text="{Binding Distance, Mode=OneWay}"/>
             <Run Text="公里"/>
         </TextBlock>

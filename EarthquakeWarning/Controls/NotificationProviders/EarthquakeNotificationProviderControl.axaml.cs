@@ -12,7 +12,7 @@ public partial class EarthquakeNotificationProviderControl : UserControl, INotif
     private double Latitude { get; set; }
     private double Longitude { get; set; }
     public EarthquakeInfo EarthquakeInfo { get; set; }
-    public string PlaceName { get; set; }
+    public string PlaceName { get; set; } = string.Empty;
     public int Distance { get; set; }
     public int Updates { get; set; }
     public double Magnitude { get; set; }
@@ -22,7 +22,9 @@ public partial class EarthquakeNotificationProviderControl : UserControl, INotif
         get
         {
             double distance = HuaniaEarthQuakeCalculator.GetDistance(Latitude, Longitude, EarthquakeInfo.Latitude, EarthquakeInfo.Longitude);
-            return HuaniaEarthQuakeCalculator.GetIntensity(EarthquakeInfo.Magnitude, distance).ToString("F1");
+            return HuaniaEarthQuakeCalculator
+                .GetIntensity(EarthquakeInfo.Magnitude, distance, EarthquakeInfo.Depth, EarthquakeInfo.Longitude)
+                .ToString("F1");
         }
     }
 
@@ -32,7 +34,8 @@ public partial class EarthquakeNotificationProviderControl : UserControl, INotif
         get 
         {
             double distance = HuaniaEarthQuakeCalculator.GetDistance(Latitude, Longitude, EarthquakeInfo.Latitude, EarthquakeInfo.Longitude);
-            double expectTime = HuaniaEarthQuakeCalculator.GetCountDownSeconds(EarthquakeInfo.Depth??10.0, distance);
+            double depth = EarthquakeInfo.Depth is > 0 ? EarthquakeInfo.Depth.Value : 10.0;
+            double expectTime = HuaniaEarthQuakeCalculator.GetCountDownSeconds(depth, distance);
             DateTime pWaveArriveTime = EarthquakeTime.Parse(EarthquakeInfo.ShockTime).AddSeconds(expectTime);
             TimeSpan timeDifference = pWaveArriveTime - DateTime.Now;
             return timeDifference;
@@ -66,9 +69,11 @@ public partial class EarthquakeNotificationProviderControl : UserControl, INotif
             OnPropertyChanged(nameof(LocalIntensity));
         };
         timer.Start();
+        // 提醒关闭后控件会离开可视化树，必须停止计时器，否则会一直持有控件造成泄漏。
+        DetachedFromVisualTree += (_, _) => timer.Stop();
     }
 
-    public event PropertyChangedEventHandler? PropertyChanged;
+    public new event PropertyChangedEventHandler? PropertyChanged;
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

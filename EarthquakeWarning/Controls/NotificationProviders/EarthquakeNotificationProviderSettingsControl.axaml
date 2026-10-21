@@ -10,83 +10,115 @@
     xmlns:ui="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
     xmlns:models="clr-namespace:EarthquakeWarning.Models"
     mc:Ignorable="d"
-    d:DesignHeight="600" d:DesignWidth="450">
+    d:DesignHeight="560" d:DesignWidth="450">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Spacing="4" DataContext="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=local:EarthquakeNotificationProviderSettingsControl}}">
-            
+        <StackPanel Spacing="4"
+                    DataContext="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=local:EarthquakeNotificationProviderSettingsControl}}">
+
             <ui:InfoBar Title="免责声明"
+                        Margin="0"
                         IsOpen="True"
                         IsClosable="False"
                         Severity="Informational"
                         Message="地震预警信息通过小米 MIUI 地震预警服务提供。作者不对信息的准确性、有效性、及时性作承诺和保证。" />
 
-            <TextBlock Text="服务状态" Theme="{StaticResource BodyStrongTextBlockStyle}" Margin="2,8,0,0"/>
-            <ui:SettingsExpander Header="服务器信息"
+            <TextBlock Text="服务状态"
+                       Theme="{StaticResource BodyStrongTextBlockStyle}"
+                       Margin="2,12,0,4" />
+            <ui:SettingsExpander Header="运行状态"
+                                 Margin="0"
+                                 IconSource="Cloud"
                                  Description="{Binding Settings.ServerInfo}">
-                <ui:SettingsExpander.IconSource>
-                    <ui:SymbolIconSource Symbol="Cloud" />
-                </ui:SettingsExpander.IconSource>
-                <ui:SettingsExpander.Footer>
-                    <ui:SymbolIcon Symbol="Clock" Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
-                </ui:SettingsExpander.Footer>
+                <ui:SettingsExpanderItem Content="当前数据"
+                                         Description="{Binding Settings.Info}" />
             </ui:SettingsExpander>
 
-            <ui:SettingsExpander Header="当前数据摘要"
-                                 Description="{Binding Settings.Info}">
-                <ui:SettingsExpander.IconSource>
-                    <ui:SymbolIconSource Symbol="Code" />
-                </ui:SettingsExpander.IconSource>
-            </ui:SettingsExpander>
-
-            <TextBlock Text="预警配置" Theme="{StaticResource BodyStrongTextBlockStyle}" Margin="2,8,0,0"/>
-            
-            <ui:SettingsExpander Header="地理位置" 
-                                 Description="设置接收预警的参考坐标"
+            <TextBlock Text="预警配置"
+                       Theme="{StaticResource BodyStrongTextBlockStyle}"
+                       Margin="2,12,0,4" />
+            <ui:SettingsExpander Header="地理位置"
+                                 Margin="0"
                                  IconSource="Target"
+                                 Description="用于计算本地烈度和预计到达时间"
                                  IsExpanded="True">
                 <ui:SettingsExpander.Footer>
-                    <Button Content="自动定位" 
-                            Click="btnLocate_Click" 
-                            x:Name="btnLocate"/>
+                    <Button Content="自动定位"
+                            Click="btnLocate_Click"
+                            x:Name="btnLocate" />
                 </ui:SettingsExpander.Footer>
 
                 <ui:SettingsExpanderItem Content="纬度">
                     <ui:SettingsExpanderItem.Footer>
-                        <TextBox Width="150" Text="{Binding Settings.Latitude}" Watermark="例如: 30.65"/>
+                        <NumericUpDown Width="150"
+                                       Value="{Binding Settings.Latitude}"
+                                       Minimum="-90" Maximum="90"
+                                       Increment="0.001"
+                                       FormatString="0.######" />
                     </ui:SettingsExpanderItem.Footer>
                 </ui:SettingsExpanderItem>
 
                 <ui:SettingsExpanderItem Content="经度">
                     <ui:SettingsExpanderItem.Footer>
-                        <TextBox Width="150" Text="{Binding Settings.Longitude}" Watermark="例如: 104.06"/>
+                        <NumericUpDown Width="150"
+                                       Value="{Binding Settings.Longitude}"
+                                       Minimum="-180" Maximum="180"
+                                       Increment="0.001"
+                                       FormatString="0.######" />
                     </ui:SettingsExpanderItem.Footer>
                 </ui:SettingsExpanderItem>
             </ui:SettingsExpander>
 
             <ui:InfoBar x:Name="locationErrorInfoBar"
+                        Margin="0"
                         Title="无法自动定位"
-                        Message="请确认系统位置服务已开启，并允许 ClassIsland 访问位置信息后重试。"
+                        Message="请确认系统位置服务已开启，并允许 ClassIsland 访问位置信息。"
                         Severity="Warning"
                         IsOpen="False"
                         IsClosable="True" />
 
             <ui:SettingsExpander Header="烈度阈值"
+                                 Margin="0"
                                  IconSource="Filter"
-                                 Description="仅当本地预估烈度大于该值时触发提醒">
+                                 Description="本地预估烈度超过该值时弹出提醒">
                 <ui:SettingsExpander.Footer>
-                    <NumericUpDown Width="150" 
-                                   Value="{Binding Settings.Threshold}" 
-                                   Minimum="0" Maximum="12" 
-                                   Increment="0.1" />
+                    <NumericUpDown Width="150"
+                                   Value="{Binding Settings.Threshold}"
+                                   Minimum="0" Maximum="12"
+                                   Increment="0.1"
+                                   FormatString="0.0" />
                 </ui:SettingsExpander.Footer>
             </ui:SettingsExpander>
 
+            <ui:SettingsExpander Header="倒计时语音"
+                                 Margin="0"
+                                 IconSource="Volume"
+                                 Description="预警开始时自动提高系统音量；10 秒前每 2 秒播报一次，最后 10 秒逐秒播报">
+                <ui:SettingsExpanderItem Content="启用语音播报">
+                    <ui:SettingsExpanderItem.Footer>
+                        <ToggleSwitch IsChecked="{Binding Settings.IsSpeechEnabled}" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+
+                <ui:SettingsExpanderItem Content="播报阈值"
+                                         Description="与提醒阈值相互独立">
+                    <ui:SettingsExpanderItem.Footer>
+                        <NumericUpDown Width="150"
+                                       Value="{Binding Settings.SpeechThreshold}"
+                                       Minimum="0" Maximum="12"
+                                       Increment="0.1"
+                                       FormatString="0.0"
+                                       IsEnabled="{Binding Settings.IsSpeechEnabled}" />
+                    </ui:SettingsExpanderItem.Footer>
+                </ui:SettingsExpanderItem>
+            </ui:SettingsExpander>
+
             <ui:SettingsExpander Header="预警动作"
-                                 IconSource="Play"
+                                 Margin="0"
+                                 IconSource="Code"
                                  Description="{Binding Settings.ActionStatus}">
                 <ui:SettingsExpanderItem Content="执行 CMD 命令"
-                                         Description="达到预警阈值时，每个地震事件执行一次">
+                                         Description="每个地震事件执行一次">
                     <ui:SettingsExpanderItem.Footer>
                         <ToggleSwitch IsChecked="{Binding Settings.IsCommandEnabled}" />
                     </ui:SettingsExpanderItem.Footer>
@@ -100,44 +132,19 @@
                                  Watermark="例如: shutdown /s /t 60" />
                     </ui:SettingsExpanderItem.Footer>
                 </ui:SettingsExpanderItem>
-
-                <ui:SettingsExpanderItem Content="播放音频"
-                                         Description="播放期间系统主音量设为最大，结束后恢复">
-                    <ui:SettingsExpanderItem.Footer>
-                        <ToggleSwitch IsChecked="{Binding Settings.IsAudioEnabled}" />
-                    </ui:SettingsExpanderItem.Footer>
-                </ui:SettingsExpanderItem>
-
-                <ui:SettingsExpanderItem Content="音频文件">
-                    <ui:SettingsExpanderItem.Footer>
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBox Width="220"
-                                     Text="{Binding Settings.AudioFilePath}"
-                                     IsEnabled="{Binding Settings.IsAudioEnabled}"
-                                     Watermark="选择 WAV、MP3、AAC 或 WMA 文件" />
-                            <Button Content="选择"
-                                    IsEnabled="{Binding Settings.IsAudioEnabled}"
-                                    Click="btnSelectAudio_Click" />
-                        </StackPanel>
-                    </ui:SettingsExpanderItem.Footer>
-                </ui:SettingsExpanderItem>
             </ui:SettingsExpander>
 
-            <TextBlock Text="调试与测试" Theme="{StaticResource BodyStrongTextBlockStyle}" Margin="2,8,0,0"/>
+            <TextBlock Text="调试与测试"
+                       Theme="{StaticResource BodyStrongTextBlockStyle}"
+                       Margin="2,12,0,4" />
             <ui:SettingsExpander Header="预警演练"
-                                 Description="发送一次模拟地震预警通知以验证功能"
+                                 Margin="0"
                                  IconSource="Play"
+                                 Description="模拟一次地震预警，检查提醒和倒计时语音"
                                  ActionIconSource="ChevronRight"
                                  IsClickEnabled="True"
                                  x:Name="btnExample"
                                  Click="btnExample_Click" />
-
-            <TextBlock Text="测试模式将模拟一次地震预警以检查通知系统是否正常。" 
-                       Theme="{StaticResource CaptionTextBlockStyle}" 
-                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                       HorizontalAlignment="Center" 
-                       Margin="0,8,0,0"/>
-
         </StackPanel>
     </ScrollViewer>
 </ci:NotificationProviderControlBase>

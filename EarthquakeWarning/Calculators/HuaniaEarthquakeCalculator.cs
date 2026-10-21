@@ -112,17 +112,55 @@ public static class HuaniaEarthQuakeCalculator
     ];
 
 
+    /// <summary>
+    /// 基于汪素云等（2000）中国分区烈度衰减关系估算本地烈度。
+    /// 以震中经度 105°E 划分东、西部，用震源距纳入深度影响；
+    /// 在缺少断层走向信息时取长、短轴结果的平均值作为方位平均估计。
+    /// </summary>
+    /// <param name="magnitude">震级</param>
+    /// <param name="epicentralDistance">震中距（km）</param>
+    /// <param name="depth">震源深度（km）</param>
+    /// <param name="epicenterLongitude">震中经度</param>
+    public static double GetIntensity(double magnitude, double epicentralDistance, double? depth, double epicenterLongitude)
+    {
+        if (!double.IsFinite(magnitude) || !double.IsFinite(epicentralDistance) || epicentralDistance < 0)
+        {
+            return 0.0;
+        }
+
+        var depthKm = depth is > 0.0 and < 1000.0 ? depth.Value : 10.0;
+        // 震源距：深源地震在地表的震动弱于同震中距的浅源地震。
+        var hypocentralDistance = Math.Sqrt(epicentralDistance * epicentralDistance + depthKm * depthKm);
+
+        double aLong, aShort, b, cLong, cShort, r0Long, r0Short;
+        if (epicenterLongitude >= 105.0)
+        {
+            // 中国东部
+            aLong = 5.019; b = 1.446; cLong = 4.136; r0Long = 24.0;
+            aShort = 2.240; cShort = 3.070; r0Short = 9.0;
+        }
+        else
+        {
+            // 中国西部
+            aLong = 5.253; b = 1.398; cLong = 4.164; r0Long = 26.0;
+            aShort = 2.019; cShort = 2.943; r0Short = 8.0;
+        }
+
+        var longAxis = aLong + b * magnitude - cLong * Math.Log10(hypocentralDistance + r0Long);
+        var shortAxis = aShort + b * magnitude - cShort * Math.Log10(hypocentralDistance + r0Short);
+        return Math.Clamp((longAxis + shortAxis) / 2.0, 0.0, 12.0);
+    }
+
     public static double GetIntensity(double magnitude, double distance)
     {
-        var log = (double)(magnitude * 1.363d + 2.941d - Math.Log(distance + 7.0d) * 1.494d);
-        return log < 0.0f ? 0.0f : log;
+        return GetIntensity(magnitude, distance, null, 105.0);
     }
 
     public static double GetCountDownSeconds(double depth, double distance)
     {
-        if (depth < 0.0f || distance < 0.0f)
+        if (!double.IsFinite(depth) || !double.IsFinite(distance) || depth < 0.0 || distance < 0.0)
         {
-            return 0.0f;
+            return 0.0;
         }
         var i = (int)(depth / 5.0f);
         if (i > 6)
